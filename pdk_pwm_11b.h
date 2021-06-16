@@ -44,7 +44,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 BYTE	prescaler;		// 6-bit  [1, 4, 16, 64]
 WORD	scalar;			// 5-bit  [0 : 31]
 WORD	counter;		// 11-bit [0 : 2046] in steps of 2
-
+WORD	duty;			// 11-bit [0 : 2047]
 
 //======================//
 // PWM SOLVER VARIABLES //

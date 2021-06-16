@@ -60,12 +60,13 @@ Copyright (c) 2021 Robert R. Puccinelli
 EXTERN BYTE		prescaler;		// 6-bit  [1, 4, 16, 64]
 EXTERN WORD		scalar;			// 5-bit  [0 : 31]
 EXTERN WORD		counter;		// 11-bit [0 : 2046] in steps of 2
-EXTERN BIT		use_pwm_solver; // Flag to select PWM solver, if available
+EXTERN WORD		duty;			// 11-bit [0 : 2047]
 BYTE			temp_byte;		// General purpose byte that is overwritten
 
 // Variables required for solving PWM parameters
 #IF SOLVER_OPTION
 
+EXTERN BIT		use_pwm_solver; // Flag to select PWM solver, if available
 EXTERN DWORD	f_pwm_target;	// Hz
 DWORD			f_pwm_clk;		// Hz
 DWORD			clock_ratio;	// PWM_Clk / PWM_Target, pulses per second
@@ -197,8 +198,6 @@ static void Solve_PWM_Parameters(void)
 
 void PWM_11b_Initialize (void)
 {
-	PWM_DUTY_L 	= PWM_VAL_DUTY_L;
-	PWM_DUTY_H 	= PWM_VAL_DUTY_H;
 	$ PWM_CTL	PWM_OUTPUT, PWM_CLOCK;
 }
 
@@ -216,16 +215,19 @@ void PWM_11b_Set_Parameters(void)
 	PWM_COUNT_L = (counter >> 1) & 0b11;
 	PWM_COUNT_H	= (counter >> 3);
 	PWM_SCALAR	= (temp_byte << 5) | scalar;
+	PWM_DUTY_L 	= duty & 0b111;
+	PWM_DUTY_H 	= (duty >> 3);
 }
 
 void PWM_11b_Start (void)
 {
-	$ PWM_CTL Enable, Reset;
+	PWM_CTL.Reset = 1;
+	PWM_CTL.Enable = 1;
 }
 
 void PWM_11b_Stop (void)
 {
-	PWM_CTL.7 = 0;
+	PWM_CTL.Enable = 0;
 }
 
 void PWM_11b_Release (void)

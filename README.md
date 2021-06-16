@@ -23,7 +23,8 @@ While the original goal of tihs repository was to improve the usability of Padau
 
 ## Testing
 
-In addition to providing peripheral header and source files, the [PeripheralTest](./PeripheralTest/) directory contains a Padauk IDE project that loads the peripherals and demonstrates how to use properly use them. This is the same project that I use to validate that the sources compile and I also use it to evaluate how much RAM and ROM is consumed by each peripheral. The resource usage of each peripheral is located in the description at the top of the header file. After compilation succeeds, peripherals are tested on a Padauk 5S-I-S02B in-circuit emulator to validate behavior and make compiler optimizations. 
+In addition to providing peripheral header and source files, the [PeripheralTest](./PeripheralTest/) directory contains a Padauk IDE project that loads the peripherals and demonstrates how to use properly use them. This is the same project that I use to validate that the sources compile and I also use it to evaluate how much RAM and ROM is consumed by each peripheral. The resource usage of each peripheral is located in the description at the top of the header file. 
+This library is currently not tested on a Padauk 5S-I-S02B in-circuit emulator, but it will be soon. Using the emulator will allow for behavior validation and permit compiler optimizations. 
 
 ## Example Code and Projects
 

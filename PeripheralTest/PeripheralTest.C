@@ -4,6 +4,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 #include	"../system_settings.h"
 #include	"../pdk_i2c.h"
 #include	"../pdk_pwm_11b.h"
+#include 	"../pdk_button.h"
 
 void	FPPA0 (void)
 {
@@ -35,6 +36,7 @@ void	FPPA0 (void)
 	prescaler = 64;			// 6-bit  [1, 4, 16, 64]
 	scalar = 31;			// 5-bit  [0 : 31]
 	counter = 2046;			// 11-bit [0 : 2046] in steps of 2
+	duty = 1023;			// 11-bit [0 : 2047]
 	use_pwm_solver = 1; 	// Flag to select PWM solver, if available
 	
  	PWM_11b_Initialize ();
@@ -44,7 +46,18 @@ void	FPPA0 (void)
  	PWM_11b_Stop ();
 
 
+	//======================//
+	// BUTTON FEATURE CHECK //
+	//======================//
 
+	active_a = 0;
+	active_b = 0;
+	button_enabled_a = 0;
+	button_enabled_b = 0;
+	Button_Initialize();
+	Button_Poll();
+	Button_Debounce_Interrupt();	// Call to ensure function is compiled
+	Button_Release();
 
 
 	while (1)
@@ -65,5 +78,10 @@ void	Interrupt (void)
 		//...
 	}
 */
+
+	if (Intrq.BTN_TIMER)
+	{
+		Button_Debounce_Interrupt();
+	}
 	popaf;
 }
