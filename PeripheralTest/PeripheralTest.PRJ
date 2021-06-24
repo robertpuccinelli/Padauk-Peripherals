@@ -4,11 +4,15 @@ PROJECT=PRE_FILE
 ~PeripheralTest.C
 ~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_i2c.c
 ~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_pwm_11b.c
+~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_button.c
+~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_lcd.c
 [HEAD]
-~extern.h
 ~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_i2c.h
 ~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_pwm_11b.h
 ~C:\Users\Robby\git_Windows\Padauk_Peripherals\system_settings.h
+~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_step_dir.h
+~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_button.h
+~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_lcd.h
 [DEPEND]
 ~$:INC_PDK\PMS132.INC
 ~PeripheralTest.PRE

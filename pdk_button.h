@@ -4,12 +4,12 @@ Button peripheral declarations.
 
 Buttons are configured to be digital input, pull high.
 
-ROM Used : 101B / 0x65  -  1 Port
-RAM Used :   5B / 0x05  -  1 Port
+ROM Consumed : 101B / 0x65  -  1 Port
+RAM Consumed :   5B / 0x05  -  1 Port
 
 Each Additional Port
-ROM Used + 66B / 0x42
-RAM Used +  4B / 0x04
+ROM Consumed + 66B / 0x42
+RAM Consumed +  4B / 0x04
  
 
 */

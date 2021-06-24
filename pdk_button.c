@@ -1,9 +1,14 @@
 /* pdk_button.c
    
 General button utilities.
+Buttons are configured to be digital input, pull high.
 
-ROM Consumed : 109B / 0x6D
-RAM Consumed :  14B / 0x0E  -  WITH 4B FOR COMMUNICATION BUFFER
+ROM Consumed : 101B / 0x65  -  1 Port
+RAM Consumed :   5B / 0x05  -  1 Port
+
+Each Additional Port
+ROM Consumed + 66B / 0x42
+RAM Consumed +  4B / 0x04
 
 
 This software is licensed under GPLv3 <http://www.gnu.org/licenses/>.

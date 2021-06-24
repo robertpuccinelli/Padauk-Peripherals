@@ -2,10 +2,10 @@
 Copyright (c) 2021 Robert R. Puccinelli
 */
 #include	"../system_settings.h"
-#include	"../pdk_i2c.h"
+//#include	"../pdk_i2c.h"
 #include	"../pdk_pwm_11b.h"
 #include 	"../pdk_button.h"
-
+#include 	"../pdk_lcd.h"
 void	FPPA0 (void)
 {
 	.ADJUST_IC	SYSCLK=IHRC/4		//	SYSCLK=IHRC/4
@@ -15,17 +15,17 @@ void	FPPA0 (void)
 	// I2C FEATURE CHECK //
 	//===================//
 
-	BYTE buffer[4];			// Initialize communication buffer
-	i2c_device = ST7032;	// Identify target device
-	i2c_buffer = buffer;	// Link communication buffer
-	buffer[0] = 1;			// Number of messages
-	buffer[1] = MC24LC00T;	// Message
-
-	I2C_Initialize();
-	I2C_Write();
-	I2C_Read();
-	I2C_Release();
-
+//	BYTE buffer[4];			// Initialize communication buffer
+//	i2c_device = ST7032;	// Identify target device
+//	i2c_buffer = buffer;	// Link communication buffer
+//	buffer[0] = 1;			// Number of messages
+//	buffer[1] = M24C01;	// Message
+//
+//	I2C_Initialize();
+//	I2C_Write();
+//	I2C_Read();
+//	I2C_Release();
+	LCD_Initialize();
 
 	//=======================//
 	// 11b PWM FEATURE CHECK //
