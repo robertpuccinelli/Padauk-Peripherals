@@ -1,6 +1,6 @@
 /* pdk_lcd.h
    
-LCD declarations for Padauk microcontrollers..
+LCD declarations for Padauk microcontrollers.
 
 !!!OUT OF DATE!!!
 ROM Consumed : 109B / 0x6D

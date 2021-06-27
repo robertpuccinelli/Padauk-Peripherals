@@ -32,6 +32,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 #define PERIPH_PWM_11B	1		// 	11B PWM.    Disable: 0, Enable: 1
 #define PERIPH_BUTTON	1		//	Buttons.	Disable: 0, Enable: 1
 #define PERIPH_LCD		1		//	LCD.		Disable: 0, Enable: 1
+#define PERIPH_EEPROM	1		//	EEPROM.		Disable: 0, Enable: 1
 
 //======================//
 // RESOURCE UTILIZATION //
@@ -461,4 +462,27 @@ Copyright (c) 2021 Robert R. Puccinelli
 	/////////////////////////
 #endif
 
+
+#ifidni PERIPH_EEPROM, 1
+	#define EEPROM_COMM_MODE	I2C		// 
+	#define EEPROM_DRIVER		M24C01	//  
+	#define EEPROM_WRITE_CTL	NONE	// Pin on ~WC (ie PA.7)
+	#define EEPROM_PAGE_SIZE	16		// Page size in bytes
+	#define EEPROM_MEM_SIZE		128		// Memory size in bytes
+
+
+	///////////////////////////
+	// DO NOT TOUCH -- START //
+	///////////////////////////
+	#ifidni EEPROM_COMM_MODE, I2C
+		#ifz PERIPH_I2C_M
+			.error EEPROM with I2C Comm Mode REQUIRES PERIPH_I2C to be enabled! 
+		#endif
+	#endif
+
+	/////////////////////////
+	// DO NOT TOUCH -- END //
+	/////////////////////////
 #endif
+
+#endif // SYSTEM_SETTINGS_H
