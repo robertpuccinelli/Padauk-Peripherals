@@ -28,6 +28,33 @@ NOTE:
 
 	The fastest PWM is (PWM_Clk) and the slowest is (PWM_Clk / 4,192,256).
 
+	Autosolver Testing:
+	PWM CLK = 4000000
+
+	Target  = 200000
+	Result  = 200000
+	Error   = 0.000%
+
+	Target  = 20000
+	Result  = 20000
+	Error   = 0.000%
+	Time (by eye) - 1.5s
+	
+	Target  = 6500
+	Result  = 6504.07
+	Error   = 0.063%
+	Time (by eye) - 1.4s
+
+	Target  = 10
+	Result  = 9.9996
+	Error   = 0.004%
+	Time (by eye) - 2.3s
+
+	Target  = 1
+	Result  = 0.99957
+	Error   = 0.043%
+	Time (by eye) - 23.2s
+
 
 This software is licensed under GPLv3 <http://www.gnu.org/licenses/>.
 Any modifications or distributions have to be licensed under GPLv3.
@@ -103,8 +130,9 @@ static void Solve_PWM_Parameters(void)
 	{
 		clock_ratio++;
 		f_pwm_clk -= f_pwm_target;
-	} while(  !( flag.1 || flag.0 ) );
+	} while(  !flag.1 );
 
+	clock_ratio--;
 
 	// Boost low freqs into solvable range
 	// Slowest PWM possible is PWM_clk / 4,192,256
@@ -167,7 +195,7 @@ static void Solve_PWM_Parameters(void)
 			
 
 		// Break if net is within tolerance or scalar finished scanning
-		} while( (net > temp_byte) && scalar );
+		} while( (net >= temp_byte) && scalar );
 			
 		tolerance++;	// Increment tolerance for next parameter scan
 
