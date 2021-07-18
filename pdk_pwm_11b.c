@@ -4,11 +4,21 @@
 Specify IC and PWM in system_settings.h
 Currently, only one 11-bit PWM can be used. RAM/ROM saving meaure.
 
-ROM Consumed : 74B / 0x4A  -  WITHOUT SOLVER
-RAM Consumed : 6B  / 0x06  -  WITHOUT SOLVER
+ROM Consumed : 110B / 0x6E  -  WITHOUT SOLVER
+RAM Consumed : 13B  / 0x0D  -  WITHOUT SOLVER
 
-ROM Consumed : 267B / 0x10B  -  WITH SOLVER
-RAM Consumed :  25B / 0x19   -  WITH SOLVER
+ROM Consumed : 297B / 0x129  -  WITH SOLVER
+RAM Consumed :  31B / 0x0F   -  WITH SOLVER
+
+
+DOCUMENTATION ERROR:
+
+	During testing, the observed PWM was consistently 2x faster than the PWM predicted with the
+	equation in section 8.5.3 of the PMS132 manual. This was also observed with the demo code
+	in section 8.5.4, where the equation predicted 1.25 kHz, but the device ran at 2.5 kHz. To 
+	compensate for this unexpected event, the PWM_CLK is reduced by 2x in the autosolver function.
+	End users should be aware of this discrepancy before use.
+	
 
 NOTE: 
 
@@ -26,34 +36,60 @@ NOTE:
 			Scaler		: [0 : 31]
 			Counter		: [0 : 2046], in steps of 2
 
-	The fastest PWM is (PWM_Clk) and the slowest is (PWM_Clk / 4,192,256).
+	The fastest PWM is (PWM_Clk) and the slowest is (2 x PWM_Clk / 4,192,256).
 
 	Autosolver Testing:
-	PWM CLK = 4000000
+	PWM CLK = SYSCLK = 4000000
 
 	Target  = 200000
 	Result  = 200000
 	Error   = 0.000%
-
+	Time	= 331 ms
+	
 	Target  = 20000
 	Result  = 20000
 	Error   = 0.000%
-	Time (by eye) - 1.5s
+	Time    = 329 ms
+
+	Target  = 17561
+	Result  = 17582.4
+	Error   = 0.122%
+	Time    = 260 ms	
+	
+	Target  = 14000
+	Result  = 14010.5
+	Error   = 0.075%
+	Time    = 241 ms
 	
 	Target  = 6500
 	Result  = 6504.07
 	Error   = 0.063%
-	Time (by eye) - 1.4s
+	Time    = 236 ms
+
+	Target  = 2000
+	Result  = 2000
+	Error   = 0.000%
+	Time    = 321 ms
+	
+	Target  = 1000
+	Result  = 999.87
+	Error   = 0.0125%
+	Time    = 494 ms
+
+	Target  = 100
+	Result  = 100
+	Error   = 0.000%
+	Time    = 518 ms
 
 	Target  = 10
 	Result  = 9.9996
 	Error   = 0.004%
-	Time (by eye) - 2.3s
+	Time    = 3613 ms
 
 	Target  = 1
-	Result  = 0.99957
-	Error   = 0.043%
-	Time (by eye) - 23.2s
+	Result  = 2.101
+	Error   = 99.988%
+	Time    = 37160 ms
 
 
 This software is licensed under GPLv3 <http://www.gnu.org/licenses/>.
@@ -84,17 +120,20 @@ Copyright (c) 2021 Robert R. Puccinelli
 //===========//
 
 // PWM_Frequency = PWM_Clk / [ Prescaler x (Scaler + 1) x (Counter + 1) ]
-EXTERN BYTE		prescaler;		// 6-bit  [1, 4, 16, 64]
-EXTERN WORD		scalar;			// 5-bit  [0 : 31]
-EXTERN WORD		counter;		// 11-bit [0 : 2046] in steps of 2
-EXTERN WORD		duty;			// 11-bit [0 : 2047]
-BYTE			temp_byte;		// General purpose byte that is overwritten
+BYTE		prescaler;		// 6-bit  [1, 4, 16, 64]
+WORD		scalar;			// 5-bit  [0 : 31]
+WORD		counter;		// 11-bit [0 : 2046] in steps of 2
+WORD		duty = 0xFFFF;	// 11-bit [0 : 2047], if 0xFFFF, duty is set to 50%
+BYTE		temp_byte;		// General purpose byte that is overwritten
+BIT			pwm_module_initialized;
+
+pwm_module_initialized = 0;
 
 // Variables required for solving PWM parameters
 #IF SOLVER_OPTION
 
-EXTERN BIT		use_pwm_solver; // Flag to select PWM solver, if available
-EXTERN DWORD	f_pwm_target;	// Hz
+BIT				use_pwm_solver; // Flag to select PWM solver, if available
+DWORD			f_pwm_target;	// Hz
 DWORD			f_pwm_clk;		// Hz
 DWORD			clock_ratio;	// PWM_Clk / PWM_Target, pulses per second
 BYTE 			pre_count;
@@ -117,7 +156,7 @@ static void Solve_PWM_Parameters(void)
 	// Fastest PWM is PWM_Clk;
 	// Slowest PWM is PWM_Clk / 4,192,256
 	// F_Target above or below leads to worst case performance
-	f_pwm_clk =  SYSTEM_CLOCK;
+	f_pwm_clk =  PWM_CLOCK_HZ << 1;
 
 	if (!f_pwm_target) f_pwm_target=1;
 
@@ -153,7 +192,7 @@ static void Solve_PWM_Parameters(void)
 
 
 	// Solver setup
-	scalar = 33;	// 1 above max possible value in PWM formula
+	scalar = 32;	// 1 above max possible value in PWM formula
 	counter = 2049; // 2 above max possible value
 	product = 0;	// Scaler x Counter
 	net = 0;		// f_clk / (f_target * Prescaler) - (Scaler x Counter)
@@ -164,17 +203,17 @@ static void Solve_PWM_Parameters(void)
 	// High SYSCLK recommended. Can take ~2M instructions to solve in the worst case.
 	do						// Tolerance
 	{
-		scalar = 32;		// Restore scalar for next parameter scan
+	counter = 2049;	// Restore counter for next parameter scan
 
 		do					// Scalar
 		{
-			scalar--;		// Decrement scalar for next parameter scan
-			counter = 2049;	// Restore counter for next parameter scan
-			MULOP = scalar; // Load scalar into the multiplier
+			counter -=2;	// Counter can only be an odd number in PWM formula
+			scalar = 33;	// Restore scalar for next parameter scan	
 
 			do			// Counter
 			{
-				counter -= 2;					// Counter can only be an odd number in PWM formula
+				scalar--;
+				MULOP = scalar; // Load scalar into the multiplier
 				A = counter$0;					// Multiply lower byte of counter with scalar 
 				mul;
 				product$0 = A;					// Store the product
@@ -191,11 +230,11 @@ static void Solve_PWM_Parameters(void)
 
 
 			// Break if net is within tolerance or counter finished scanning
-			} while(  (net > temp_byte) && (counter > 1)  );
+			} while(  (net > temp_byte) && (scalar > 1)  );
 			
 
 		// Break if net is within tolerance or scalar finished scanning
-		} while( (net >= temp_byte) && scalar );
+		} while( (net >= temp_byte) && (counter > 1) );
 			
 		tolerance++;	// Increment tolerance for next parameter scan
 
@@ -226,40 +265,65 @@ static void Solve_PWM_Parameters(void)
 
 void PWM_11b_Initialize (void)
 {
-	$ PWM_CTL	PWM_OUTPUT, PWM_CLOCK;
+	if (! pwm_module_initialized)
+	{
+       $ PWM_CTL	PWM_OUTPUT, PWM_CLOCK;
+	   pwm_module_initialized = 1;
+	}
 }
 
 void PWM_11b_Set_Parameters(void)
 {
-	#IF SOLVER_OPTION
-	if (use_pwm_solver)	{Solve_PWM_Parameters();}	
-	#ENDIF
+	if (pwm_module_initialized)
+	{
+		#IF SOLVER_OPTION
+		if (use_pwm_solver)	{Solve_PWM_Parameters();}	
+		#ENDIF
 
-	if 		(prescaler < 4) 	temp_byte = 0b00;
-	else if (prescaler < 16) 	temp_byte = 0b01;
-	else if (prescaler < 64)	temp_byte = 0b10;
-	else						temp_byte = 0b11;
+		if 		(prescaler < 4) 	temp_byte = 0b00;
+		else if (prescaler < 16) 	temp_byte = 0b01;
+		else if (prescaler < 64)	temp_byte = 0b10;
+		else						temp_byte = 0b11;
 
-	PWM_COUNT_L = (counter >> 1) & 0b11;
-	PWM_COUNT_H	= (counter >> 3);
-	PWM_SCALAR	= (temp_byte << 5) | scalar;
-	PWM_DUTY_L 	= duty & 0b111;
-	PWM_DUTY_H 	= (duty >> 3);
+		if (duty == 0xFFFF) duty = counter >> 1;
+
+		duty <<= 5;
+		PWM_DUTY_L 	= duty$0;
+		PWM_DUTY_H 	= duty$1;
+
+		counter <<= 5;
+		PWM_COUNT_L = counter$0;
+		PWM_COUNT_H	= counter$1;
+
+		PWM_SCALAR	= (temp_byte << 5) | scalar;
+	}
 }
+
 
 void PWM_11b_Start (void)
 {
-	PWM_CTL.Reset = 1;
-	PWM_CTL.Enable = 1;
+	if (pwm_module_initialized)
+	{
+		PWM_CTL = PWM_CTL | PWM_RST | PWM_ENABLE;
+	}
 }
+
 
 void PWM_11b_Stop (void)
 {
-	PWM_CTL.Enable = 0;
+	if (pwm_module_initialized)
+	{
+		PWM_CTL = PWM_CTL & ~PWM_ENABLE;
+	}
 }
+
 
 void PWM_11b_Release (void)
 {
-	PWM_11b_Stop();
-	$ PWM_CTL Disable;
+	if (pwm_module_initialized)
+	{
+		PWM_11b_Stop();
+		PWM_CTL = PWM_DISABLE;
+		pwm_module_initialized = 0;
+	}
 }

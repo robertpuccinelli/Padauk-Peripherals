@@ -4,11 +4,11 @@ I2C utilities based off of the PADAUK IDE v0.91 Code Generator.
 Define PERIPH_I2C in system_settings.h
 
 In the communication protocol provided here, the MSB is Tx/Rx first.
+Timings are configured for 100kHz with system_settings.h. Higher may
+be achievable, but it is currently untested.
 
-
-!!!OUT OF DATE!!!
-ROM Consumed : 109B / 0x6D
-RAM Consumed :  14B / 0x0E
+ROM Consumed : 197B / 0xC5
+RAM Consumed :  12B / 0x0C
 
 
 This software is licensed under GPLv3 <http://www.gnu.org/licenses/>.
@@ -27,12 +27,12 @@ Copyright (c) 2021 Robert R. Puccinelli
 //======================//
 
 BYTE i2c_device;		      // 7-bit slave address.
-WORD i2c_buffer;		      // Pointer to Tx/Rx byte. 
+BYTE i2c_buffer;		      // Pointer to Tx/Rx byte. 
 BIT  i2c_slave_ack_bit;       // Slave acknowledge bit
 
 
 BIT  i2c_module_initialized;  // Module function blocking flag
-BYTE i2c_num_initializations; // Number of initializations 
+BYTE i2c_num_initializations = 0; // Number of initializations 
 
 
 // Default states
@@ -48,6 +48,8 @@ Delay_Start =>  I2C_D_START;
 Delay_Stop  =>  I2C_D_STOP;
 Delay_Buf   =>  I2C_D_BUF;
 
+
+.echo %Delay_High
 
 // Offset target delay
 Easy_Delay	macro	val, cmp
@@ -74,9 +76,9 @@ static void I2C_Tx_Bit (void)
 {
 	sl A;
 	swapc I2C_SDA;
-	Easy_Delay (Delay_Low, 2);
+	Easy_Delay (Delay_Low, 8)
 	$ I2C_SCL High;
-	Easy_Delay (Delay_High, 1)
+	Easy_Delay (Delay_High, 0)
 	$ I2C_SCL Low;
 }
 
@@ -84,18 +86,20 @@ static void I2C_Tx_Bit (void)
 static void I2C_Tx_ACC (void)
 {
 	.REPEAT 8
+		A = i2c_buffer;  // Transfer buffer contents to ACC
 		I2C_Tx_Bit();
+		i2c_buffer <<= 1;
 	.ENDM
 }
 
 
 static void I2C_Rx_Bit (void)
 {
-	Easy_Delay (Delay_Low, 0);
+	Easy_Delay (Delay_Low, 4)
 	$ I2C_SCL High;
 	swapc I2C_SDA;
 	slc A;
-	Easy_Delay (Delay_High, 3)
+	Easy_Delay (Delay_High, 2)
 	$ I2C_SCL Low;
 }
 
@@ -112,7 +116,7 @@ static void I2C_Rx_Acc (void)
 static void I2C_Read (void)
 {
 	I2C_Rx_ACC();
-	*i2c_buffer = A;
+	i2c_buffer = A;
 }
 
 
@@ -139,14 +143,13 @@ static void I2C_Provide_NAck (void)
 static void I2C_Listen_Ack (void)
 {
 	$ I2C_SDA In;
-	Easy_Delay (Delay_Low, 1);
+	Easy_Delay (Delay_Low, 2);
 	$ I2C_SCL High;
-	swapc I2C_SDA;
-	slc A;
-	i2c_slave_ack_bit = 0b1;			
-	$ I2C_SDA Out;
-	Easy_Delay (Delay_High, 4);
+	i2c_slave_ack_bit = 0;
+	if (I2C_SDA) {i2c_slave_ack_bit = 1;}
+	Easy_Delay (Delay_High, 3);
 	$ I2C_SCL Low;
+	$ I2C_SDA Out;
 }
 
 
@@ -171,9 +174,9 @@ void I2C_Initialize (void)
 {
 	if (! i2c_num_initializations)  // If not yet initialized 
 	{
-		$ I2C_SCL	Out, High;      // Clock pin set output high
 		$ I2C_SDA	In, Pull;       // Set data input pull high register
 		$ I2C_SDA	Out, High;      // Set data input to output high
+		$ I2C_SCL	Out, High;      // Clock pin set output high
 		i2c_module_initialized = 1; // Enable I2C functions
 	}
 	i2c_num_initializations++;      // Count number of initializations
@@ -187,8 +190,8 @@ void I2C_Release (void)
 		i2c_num_initializations--;      // Count remaining initializations
 		if (! i2c_num_initializations)   // If none remaining
 		{
-			$ I2C_SDA	In, NoPull;     // Set data to low power
 			$ I2C_SCL	In, NoPull;     // Set clock to low power
+			$ I2C_SDA	In, NoPull;     // Set data to low power
 			i2c_module_initialized = 0; // Disable I2C functions
 		}
 	}
@@ -199,7 +202,6 @@ void I2C_Stream_Write_Byte (void)
 {
 	if (i2c_module_initialized)
 	{
-		A = *i2c_buffer;  // Transfer buffer contents to ACC
 		I2C_Tx_ACC();     // Transmit individual bits
 		I2C_Listen_Ack(); // Listen for slave ack
 	}
@@ -211,7 +213,7 @@ void I2C_Stream_Write_Start (void)
 	if (i2c_module_initialized)
 	{
 		I2C_Start();                                  // I2C start condition
-		*i2c_buffer = (i2c_device << 1) | I2C_WR_CMD; // Transfer device addr + WR bit to buffer
+		i2c_buffer = (i2c_device << 1) | I2C_WR_CMD; // Transfer device addr + WR bit to buffer
 		I2C_Stream_Write_Byte();                      // Transmit buffer
 	}
 }
@@ -222,7 +224,7 @@ void I2C_Stream_Read_Start (void)
 	if (i2c_module_initialized)
 	{
 		I2C_Start();                                  // I2C start condition
-		*i2c_buffer = (i2c_device << 1) | I2C_RD_CMD; // Transfer device addr + RD bit to buffer
+		i2c_buffer = (i2c_device << 1) | I2C_RD_CMD; // Transfer device addr + RD bit to buffer
 		I2C_Stream_Write_Byte();                      // Transmit buffer
 	}
 }

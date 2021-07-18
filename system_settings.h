@@ -26,7 +26,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 #ifndef SYSTEM_SETTINGS_H
 #define SYSTEM_SETTINGS_H
 
-#define SYSTEM_CLOCK   4000000   // Change to match your choice of SYSCLK in Hz
+#define SYSTEM_CLOCK   8000000   // Change to match your choice of SYSCLK in Hz
 #define IC_TARGET      PMS132    // PMS150C, PMS132, PMS134
 #define PERIPH_I2C_M   1         // I2C Master. Disable: 0, Enable: 1
 #define PERIPH_PWM_11B 1         // 11B PWM.    Disable: 0, Enable: 1
@@ -40,28 +40,28 @@ Copyright (c) 2021 Robert R. Puccinelli
 //
 // Use this area to track which resources are used and where
 //
-//     PA0    -             PB0    -           PC0    X
-//     PA1    X             PB1    -           PC1    X    
-//     PA2    X             PB2    -           PC2    X
-//     PA3    STEP_D        PB3    -           PC3    X
-//     PA4    STEP_S        PB4    BTN         PC4    X
-//     PA5    -             PB5    BTN         PC5    X
-//     PA6    I2C_SDA       PB6    BTN         PC6    X
-//     PA7    I2C_SCL       PB7    BTN         PC7    X
+//    PA0    -             PB0    -           PC0    X
+//    PA1    X             PB1    -           PC1    X    
+//    PA2    X             PB2    -           PC2    X
+//    PA3    STEP_D        PB3    -           PC3    X
+//    PA4    STEP_S        PB4    BTN         PC4    X
+//    PA5    -             PB5    PWM-11b     PC5    X
+//    PA6    I2C_SDA       PB6    BTN         PC6    X
+//    PA7    I2C_SCL       PB7    BTN         PC7    X
 //
-//    TM16    -
-//    TM2     BTN
-//    TM3     -
+//    TM16   -
+//    TM2    BTN
+//    TM3    -
 //
-//    PWMG0   STEP_S
-//    PWMG1   -
-//    PWMG2   -
+//    PWMG0  STEP_S
+//    PWMG1  -
+//    PWMG2  -
 //
-//    ADC     -
-//    COMP    -
-//    LCD     X
-//    OPA     X
-//    TOUCH   X
+//    ADC    -
+//    COMP   -
+//    LCD    X
+//    OPA    X
+//    TOUCH  X
 //
 
 
@@ -119,7 +119,7 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define I2C_SCL     PA.7
     #define I2C_WR_CMD  0b0
     #define I2C_RD_CMD  0b1
-    #define    I2C_Duty 16        // /2, /4, /8, /16
+    #define I2C_Duty    2        // /2, /4, /8, /16
 
     //      T_xxx    nS
     #define T_High   4700
@@ -138,11 +138,14 @@ Copyright (c) 2021 Robert R. Puccinelli
     ///////////////////////////
 
     // TIME TO CLOCK CONVERSION
-    #define I2C_D_HIGH    T_High   ?  (((System_Clock / I2C_Duty) / (1000000000 / T_High))  + 1) : 0
-    #define I2C_D_LOW    T_Low     ?  (((System_Clock / I2C_Duty) / (1000000000 / T_Low))   + 1) : 0
-    #define I2C_D_START  T_Start   ?  (((System_Clock / I2C_Duty) / (1000000000 / T_Start)) + 1) : 0
-    #define I2C_D_STOP   T_Stop    ?  (((System_Clock / I2C_Duty) / (1000000000 / T_Stop))  + 1) : 0
-    #define I2C_D_BUF    T_Buf     ?  (((System_Clock / I2C_Duty) / (1000000000 / T_Buf))   + 1) : 0
+    #define I2C_D_HIGH   T_High    ?  (((SYSTEM_CLOCK / I2C_Duty) / (1000000000 / T_High))  + 1) : 0
+    #define I2C_D_LOW    T_Low     ?  (((SYSTEM_CLOCK / I2C_Duty) / (1000000000 / T_Low))   + 1) : 0
+    #define I2C_D_START  T_Start   ?  (((SYSTEM_CLOCK / I2C_Duty) / (1000000000 / T_Start)) + 1) : 0
+    #define I2C_D_STOP   T_Stop    ?  (((SYSTEM_CLOCK / I2C_Duty) / (1000000000 / T_Stop))  + 1) : 0
+    #define I2C_D_BUF    T_Buf     ?  (((SYSTEM_CLOCK / I2C_Duty) / (1000000000 / T_Buf))   + 1) : 0
+
+
+
 
     /////////////////////////
     // DO NOT TOUCH -- END //
@@ -154,13 +157,16 @@ Copyright (c) 2021 Robert R. Puccinelli
 // 11b PWM //
 //=========//
 #ifidni PERIPH_PWM_11B, 1
-    #define PWM_CLOCK_HZ    System_Clock // Or IHRC / IHRC x2 in Hz
+    #define PWM_CLOCK_HZ    SYSTEM_CLOCK // Or IHRC / IHRC x2 in Hz
     #define PWM_CTL         PWMG0C       // PWMG0C, 1, 2
     #define PWM_SCALAR      PWMG0S
     #define PWM_COUNT_H     PWMG0CUBH
     #define PWM_COUNT_L     PWMG0CUBL
     #define PWM_DUTY_H      PWMG0DTH
     #define PWM_DUTY_L      PWMG0DTL
+    #define PWM_RST         (1 << 4)
+    #define PWM_ENABLE      (1 << 7)
+    #define PWM_DISABLE     0
 
     #define PWM_CLOCK       SYSCLK       // SYSCLK, IHRC, IHRC*2
     #define PWM_OUTPUT      PB5          // Disable, PB5, PA0, PB4
@@ -226,7 +232,7 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define BTN_PB2       0        // Options: 0 / 1
     #define BTN_PB3       0        // Options: 0 / 1
     #define BTN_PB4       1        // Options: 0 / 1
-    #define BTN_PB5       1        // Options: 0 / 1
+    #define BTN_PB5       0        // Options: 0 / 1
     #define BTN_PB6       1        // Options: 0 / 1
     #define BTN_PB7       1        // Options: 0 / 1
 

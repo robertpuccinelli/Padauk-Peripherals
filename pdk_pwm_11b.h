@@ -4,12 +4,22 @@
 Specify IC and PWM in system_settings.h
 Currently, only one 11-bit PWM can be used. RAM/ROM saving meaure.
 
-ROM Consumed : 74B / 0x4A  -  WITHOUT SOLVER
-RAM Consumed : 6B  / 0x06  -  WITHOUT SOLVER
+ROM Consumed : 110B / 0x6E  -  WITHOUT SOLVER
+RAM Consumed : 13B  / 0x0D  -  WITHOUT SOLVER
 
-ROM Consumed : 267B / 0x10B  -  WITH SOLVER
-RAM Consumed :  25B / 0x19   -  WITH SOLVER
+ROM Consumed : 297B / 0x129  -  WITH SOLVER
+RAM Consumed :  31B / 0x0F   -  WITH SOLVER
 
+
+DOCUMENTATION ERROR:
+
+	During testing, the observed PWM was consistently 2x faster than the PWM predicted with the
+	equation in section 8.5.3 of the PMS132 manual. This was also observed with the demo code
+	in section 8.5.4, where the equation predicted 1.25 kHz, but the device ran at 2.5 kHz. To 
+	compensate for this unexpected event, the PWM_CLK is reduced by 2x in the autosolver function.
+	End users should be aware of this discrepancy before use.
+
+	
 NOTE: 
 
 	ICs with an 8x8 multiplier have the option to solve for register settings
@@ -41,10 +51,10 @@ Copyright (c) 2021 Robert R. Puccinelli
 // VARIABLES //
 //===========//
 
-BYTE	prescaler;		// 6-bit  [1, 4, 16, 64]
-WORD	scalar;			// 5-bit  [0 : 31]
-WORD	counter;		// 11-bit [0 : 2046] in steps of 2
-WORD	duty;			// 11-bit [0 : 2047]
+EXTERN BYTE	prescaler;		// 6-bit  [1, 4, 16, 64]
+EXTERN WORD	scalar;			// 5-bit  [0 : 31]
+EXTERN WORD	counter;		// 11-bit [0 : 2046] in steps of 2
+EXTERN WORD	duty;			// 11-bit [0 : 2047]
 
 //======================//
 // PWM SOLVER VARIABLES //
@@ -52,8 +62,8 @@ WORD	duty;			// 11-bit [0 : 2047]
 
 #IF SOLVER_OPTION
 
-DWORD	f_pwm_target;	// Hz
-BIT		use_pwm_solver; // Flag to select PWM solver, if available
+EXTERN DWORD	f_pwm_target;	// Hz
+EXTERN BIT		use_pwm_solver; // Flag to select PWM solver, if available
 
 #ENDIF
 

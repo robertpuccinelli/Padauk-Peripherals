@@ -3,9 +3,12 @@
 I2C declarations based off of the PADAUK IDE v0.91 Code Generator. 
 Define PERIPH_I2C in system_settings.h
 
-!!!OUT OF DATE!!!
-ROM Consumed : 109B / 0x6D
-RAM Consumed :  14B / 0x0E
+In the communication protocol provided here, the MSB is Tx/Rx first.
+Timings are configured for 100kHz with system_settings.h. Higher may
+be achievable, but it is currently untested.
+
+ROM Consumed : 197B / 0xC5
+RAM Consumed :  12B / 0x0C
 
 
 This software is licensed under GPLv3 <http://www.gnu.org/licenses/>.
@@ -22,7 +25,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 //===========//
 
 EXTERN BYTE i2c_device;	       // Device address.
-EXTERN WORD i2c_buffer;	       // Pointer to Tx/Rx byte.
+EXTERN BYTE i2c_buffer;	       // Pointer to Tx/Rx byte.
 EXTERN BIT  i2c_slack_ack_bit; // Slave acknowledge bit.
 
 
