@@ -5,10 +5,10 @@ Specify IC and PWM in system_settings.h
 Currently, only one 11-bit PWM can be used. RAM/ROM saving meaure.
 
 ROM Consumed : 110B / 0x6E  -  WITHOUT SOLVER
-RAM Consumed : 13B  / 0x0D  -  WITHOUT SOLVER
+RAM Consumed : 14B  / 0x0E  -  WITHOUT SOLVER
 
 ROM Consumed : 297B / 0x129  -  WITH SOLVER
-RAM Consumed :  31B / 0x0F   -  WITH SOLVER
+RAM Consumed :  33B / 0x12   -  WITH SOLVER
 
 
 DOCUMENTATION ERROR:
@@ -16,7 +16,7 @@ DOCUMENTATION ERROR:
 	During testing, the observed PWM was consistently 2x faster than the PWM predicted with the
 	equation in section 8.5.3 of the PMS132 manual. This was also observed with the demo code
 	in section 8.5.4, where the equation predicted 1.25 kHz, but the device ran at 2.5 kHz. To 
-	compensate for this unexpected event, the PWM_CLK is reduced by 2x in the autosolver function.
+	compensate for this unexpected event, the PWM_CLK is increased by 2x in the autosolver function.
 	End users should be aware of this discrepancy before use.
 	
 
@@ -125,14 +125,14 @@ WORD		scalar;			// 5-bit  [0 : 31]
 WORD		counter;		// 11-bit [0 : 2046] in steps of 2
 WORD		duty = 0xFFFF;	// 11-bit [0 : 2047], if 0xFFFF, duty is set to 50%
 BYTE		temp_byte;		// General purpose byte that is overwritten
-BIT			pwm_module_initialized;
+BYTE		pwm_flags = 0;
+BIT			pwm_module_initialized : pwm_flags.?;
 
-pwm_module_initialized = 0;
 
 // Variables required for solving PWM parameters
 #IF SOLVER_OPTION
 
-BIT				use_pwm_solver; // Flag to select PWM solver, if available
+BIT				use_pwm_solver : pwm_flags.?; // Flag to select PWM solver, if available
 DWORD			f_pwm_target;	// Hz
 DWORD			f_pwm_clk;		// Hz
 DWORD			clock_ratio;	// PWM_Clk / PWM_Target, pulses per second

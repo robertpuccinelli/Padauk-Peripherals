@@ -26,7 +26,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 
 EXTERN BYTE i2c_device;	       // Device address.
 EXTERN BYTE i2c_buffer;	       // Pointer to Tx/Rx byte.
-EXTERN BIT  i2c_slack_ack_bit; // Slave acknowledge bit.
+EXTERN BIT  i2c_slave_ack_bit; // Slave acknowledge bit.
 
 
 //===================//

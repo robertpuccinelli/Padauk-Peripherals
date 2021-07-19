@@ -26,13 +26,14 @@ Copyright (c) 2021 Robert R. Puccinelli
 // VARIABLES AND MACROS //
 //======================//
 
-BYTE i2c_device;		      // 7-bit slave address.
-BYTE i2c_buffer;		      // Pointer to Tx/Rx byte. 
-BIT  i2c_slave_ack_bit;       // Slave acknowledge bit
+BYTE i2c_device;		          // 7-bit slave address.
+BYTE i2c_buffer;		          // Pointer to Tx/Rx byte. 
+BYTE i2c_num_initializations = 0; // Number of initializations
 
+BYTE i2c_flags = 0;
+BIT  i2c_slave_ack_bit : i2c_flags.?;       // Slave acknowledge bit
+BIT  i2c_module_initialized : i2c_flags.?;  // Module function blocking flag
 
-BIT  i2c_module_initialized;  // Module function blocking flag
-BYTE i2c_num_initializations = 0; // Number of initializations 
 
 
 // Default states
@@ -98,7 +99,7 @@ static void I2C_Rx_Bit (void)
 	Easy_Delay (Delay_Low, 4)
 	$ I2C_SCL High;
 	swapc I2C_SDA;
-	slc A;
+	slc i2c_buffer;
 	Easy_Delay (Delay_High, 2)
 	$ I2C_SCL Low;
 }
@@ -115,8 +116,8 @@ static void I2C_Rx_Acc (void)
 
 static void I2C_Read (void)
 {
+	i2c_buffer = 0;
 	I2C_Rx_ACC();
-	i2c_buffer = A;
 }
 
 

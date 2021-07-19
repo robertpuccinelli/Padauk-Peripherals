@@ -5,10 +5,10 @@ Specify IC and PWM in system_settings.h
 Currently, only one 11-bit PWM can be used. RAM/ROM saving meaure.
 
 ROM Consumed : 110B / 0x6E  -  WITHOUT SOLVER
-RAM Consumed : 13B  / 0x0D  -  WITHOUT SOLVER
+RAM Consumed : 14B  / 0x0E  -  WITHOUT SOLVER
 
 ROM Consumed : 297B / 0x129  -  WITH SOLVER
-RAM Consumed :  31B / 0x0F   -  WITH SOLVER
+RAM Consumed :  33B / 0x12   -  WITH SOLVER
 
 
 DOCUMENTATION ERROR:
