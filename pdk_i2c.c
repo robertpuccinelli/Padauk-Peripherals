@@ -36,12 +36,6 @@ BIT  i2c_module_initialized : i2c_flags.?;  // Module function blocking flag
 
 
 
-// Default states
-i2c_module_initialized   = 0;
-i2c_num_initializations  = 0;
-i2c_slave_ack_bit        = 1; 
-
-
 // Delay cycles
 Delay_High  =>  I2C_D_HIGH;
 Delay_Low   =>  I2C_D_LOW;

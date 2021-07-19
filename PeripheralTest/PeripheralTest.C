@@ -3,7 +3,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 */
 #include	"../system_settings.h"
 //#include	"../pdk_i2c.h"
-#include	"../pdk_pwm_11b.h"
+//#include	"../pdk_pwm_11b.h"
 //#include 	"../pdk_button.h"
 //#include 	"../pdk_lcd.h"
 //#include	"../pdk_eeprom.h"
@@ -115,6 +115,8 @@ void	FPPA0 (void)
 	//======================//
 	// EEPROM FEATURE CHECK //
 	//======================//
+
+
 /*
 	BYTE mem_buff[4];
 	eeprom_trx_buffer = mem_buff; 
@@ -126,9 +128,13 @@ void	FPPA0 (void)
 	mem_buff[3] = 0b01010101; // operation 2
 	EEPROM_Write();
 
+	eeprom_trx_buffer = mem_buff;
 	mem_buff[1] = 0;          // Read 1B before write
-
+	EEPROM_Read();
+	EEPROM_Release();
 */
+
+
 
 	while (1)
 	{

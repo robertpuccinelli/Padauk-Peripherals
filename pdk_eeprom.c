@@ -2,10 +2,17 @@
    
 EEPROM definitions for Padauk microcontrollers.
 
-!!!OUT OF DATE!!!
-ROM Consumed : 109B / 0x6D
-RAM Consumed :  14B / 0x0E
+ROM Consumed : 96B / 0x60
+RAM Consumed : 15B / 0x0F  -  USING 4B BUFFER
 
+
+USAGE NOTE:
+
+	The buffer is formatted [2B] + [NB]. The first byte is used to identify the
+	number of data bytes to process and the second byte is the EEPROM device ID.
+	The N bytes after are used for reading or writing data. The first byte specifies
+	how many of these bytes will be processed.
+	
 
 This software is licensed under GPLv3 <http://www.gnu.org/licenses/>.
 Any modifications or distributions have to be licensed under GPLv3.
@@ -23,17 +30,16 @@ Copyright (c) 2021 Robert R. Puccinelli
 //===========//
 
 WORD eeprom_trx_buffer;
-BYTE eeprom_device_addr;
-BIT	 eeprom_module_initialized;
-BYTE count;
+BYTE eeprom_device_addr = EEPROM_DRIVER;
+BYTE eeprom_flags = 0;
+BIT	 eeprom_module_initialized : eeprom_flags.?;
+BIT  eeprom_busy : eeprom_flags.?;
+BYTE count = 0;
 
-eeprom_device_addr = EEPROM_DRIVER;
-eeprom_module_initialized = 0;
-count = 0;
 
-//====================//
-// HARDWARE INTERFACE //
-//====================//
+//==================//
+// STATIC FUNCTIONS //
+//==================//
 
 void EEPROM_Write_Enable (void)
 {
@@ -50,6 +56,25 @@ void EEPROM_Write_Disable (void)
 	#endif
 }
 
+
+
+void	EEPROM_Check_Busy (void)
+{
+	#ifidni EEPROM_COMM_MODE, I2C
+		i2c_device = eeprom_device_addr;
+		I2C_Stream_Write_Start();
+		I2C_Stream_Stop();
+		eeprom_busy = 0;
+		if (i2c_slave_ack_bit) {eeprom_busy = 1;}
+	#endif
+}
+
+
+void	EEPROM_Delay_While_Busy (void)
+{
+	do EEPROM_Check_Busy();
+	while (eeprom_busy);
+}
 
 //===================//
 // PROGRAM INTERFACE //
@@ -88,12 +113,13 @@ void EEPROM_Read (void)
 		count = *eeprom_trx_buffer++;
 		if (count <= EEPROM_PAGE_SIZE)
 		{
+			EEPROM_Delay_While_Busy();
 			#ifidni EEPROM_COMM_MODE, I2C
 
 				// Set read address
 				i2c_device = eeprom_device_addr;
 				I2C_Stream_Write_Start();
-				i2c_buffer = eeprom_trx_buffer++;
+				i2c_buffer = *eeprom_trx_buffer++;
 				I2C_Stream_Write_Byte();
 				I2C_Stream_Stop();
 
@@ -104,7 +130,7 @@ void EEPROM_Read (void)
 					i2c_buffer = eeprom_trx_buffer++;
 					I2C_Stream_Read_Byte_Ack(); 
 				}
-				i2c_buffer = eeprom_trx_buffer;
+				i2c_buffer = *eeprom_trx_buffer;
 				I2C_Stream_Read_Byte_NAck();
 				I2C_Stream_Stop();
 			#endif
@@ -120,16 +146,17 @@ void EEPROM_Write (void)
 		count = *eeprom_trx_buffer++;
 		if (count <= EEPROM_PAGE_SIZE)
 		{
+			EEPROM_Delay_While_Busy();
 			EEPROM_Write_Enable();
 			#ifidni EEPROM_COMM_MODE, I2C
 				i2c_device = eeprom_device_addr;
 				I2C_Stream_Write_Start();
 				do 
 				{
-					i2c_buffer = eeprom_trx_buffer++;
+					i2c_buffer = *eeprom_trx_buffer++;
 					I2C_Stream_Write_Byte(); 
 				} while(--count);
-				i2c_buffer = eeprom_trx_buffer;
+				i2c_buffer = *eeprom_trx_buffer;
 				I2C_Stream_Write_Byte();
 				I2C_Stream_Stop();
 			#endif
