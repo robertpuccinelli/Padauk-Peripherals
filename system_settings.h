@@ -26,7 +26,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 #ifndef SYSTEM_SETTINGS_H
 #define SYSTEM_SETTINGS_H
 
-#define SYSTEM_CLOCK   8000000   // Change to match your choice of SYSCLK in Hz
+#define SYSTEM_CLOCK   4000000   // Change to match your choice of SYSCLK in Hz
 #define IC_TARGET      PMS132    // PMS150C, PMS132, PMS134
 #define PERIPH_I2C_M   1         // I2C Master. Disable: 0, Enable: 1
 #define PERIPH_PWM_11B 1         // 11B PWM.    Disable: 0, Enable: 1
@@ -79,6 +79,7 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define HAS_12B_ADC    0
     #define HAS_OPA        0
     #define ILRC_HZ        59000    // Varies with voltage + temperature
+	#define INSTR_CYCLES   2         // 2T architecture - DO NOT CHANGE
 #endif
 
 
@@ -91,6 +92,7 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define HAS_12B_ADC    1
     #define HAS_OPA        0
     #define ILRC_HZ        53000    // Varies with voltage + temperature
+	#define INSTR_CYCLES   2         // 2T architecture - DO NOT CHANGE
 #endif
 
 
@@ -103,6 +105,7 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define HAS_12B_ADC    1
     #define HAS_OPA        0
     #define ILRC_HZ        53000    // Varies with voltage + temperature
+	#define INSTR_CYCLES   2         // 2T architecture - DO NOT CHANGE
 #endif
 
 
@@ -119,7 +122,6 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define I2C_SCL     PA.7
     #define I2C_WR_CMD  0b0
     #define I2C_RD_CMD  0b1
-    #define I2C_Duty    2        // /2, /4, /8, /16
 
     //      T_xxx    nS
     #define T_High   4700
@@ -138,11 +140,11 @@ Copyright (c) 2021 Robert R. Puccinelli
     ///////////////////////////
 
     // TIME TO CLOCK CONVERSION
-    #define I2C_D_HIGH   T_High    ?  (((SYSTEM_CLOCK / I2C_Duty) / (1000000000 / T_High))  + 1) : 0
-    #define I2C_D_LOW    T_Low     ?  (((SYSTEM_CLOCK / I2C_Duty) / (1000000000 / T_Low))   + 1) : 0
-    #define I2C_D_START  T_Start   ?  (((SYSTEM_CLOCK / I2C_Duty) / (1000000000 / T_Start)) + 1) : 0
-    #define I2C_D_STOP   T_Stop    ?  (((SYSTEM_CLOCK / I2C_Duty) / (1000000000 / T_Stop))  + 1) : 0
-    #define I2C_D_BUF    T_Buf     ?  (((SYSTEM_CLOCK / I2C_Duty) / (1000000000 / T_Buf))   + 1) : 0
+    #define I2C_D_HIGH   T_High    ?  (((SYSTEM_CLOCK) / (1000000000 / T_High))  + 1) : 0
+    #define I2C_D_LOW    T_Low     ?  (((SYSTEM_CLOCK) / (1000000000 / T_Low))   + 1) : 0
+    #define I2C_D_START  T_Start   ?  (((SYSTEM_CLOCK) / (1000000000 / T_Start)) + 1) : 0
+    #define I2C_D_STOP   T_Stop    ?  (((SYSTEM_CLOCK) / (1000000000 / T_Stop))  + 1) : 0
+    #define I2C_D_BUF    T_Buf     ?  (((SYSTEM_CLOCK) / (1000000000 / T_Buf))   + 1) : 0
 
 
 
@@ -310,10 +312,9 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define LCD_HEIGHT     2         // Number of lines
     #define LCD_L1         0x00      // Line 1 address
     #define LCD_L2         0x40      // Line 2 address
-    #define LCD_BUSY_F     0x80      // Busy flag mask
     #define LCD_INIT_T     40000     // Initialization time, microseconds
     #define LCD_PWR_T      200000    // Power setting stabilization time, microseconds
-    #define LCD_WAIT_T     28        // Instruction gap time, microseconds
+    #define LCD_WAIT_T     30        // Instruction gap time, microseconds
 
 
     // Character Values, 8-bit
@@ -363,11 +364,6 @@ Copyright (c) 2021 Robert R. Puccinelli
     ///////////////////////////
     // DO NOT TOUCH -- START //
     ///////////////////////////
-
-    // TIME TO CLOCK CONVERSION
-    #define LCD_INIT_D   SYSTEM_CLOCK / (1000000 / LCD_INIT_T)
-    #define LCD_PWR_D    SYSTEM_CLOCK / (1000000 / LCD_STABLE_T)
-    #define LCD_WAIT_D   SYSTEM_CLOCK / (1000000 / LCD_WAIT_T)
 
     // DRIVER INSTRUCTION CODES
     #ifidni %LCD_DRIVER, %ST7032
@@ -444,7 +440,8 @@ Copyright (c) 2021 Robert R. Puccinelli
         #define LCD_FOLLOWER_RAB0       0x01    // Function set: EXTENDED
 
         #ifidni LCD_VOLTAGE, 5
-            #define LCD_INIT_FUNC              (LCD_FUNC_F | LCD_FUNC_2L | LCD_FUNC_EXTENDED)
+			#define LCD_INIT_FUNC1             (LCD_FUNC_F | LCD_FUNC_2L | LCD_FUNC_NORMAL)
+            #define LCD_INIT_FUNC2             (LCD_FUNC_F | LCD_FUNC_2L | LCD_FUNC_EXTENDED)
             #define LCD_INIT_BIAS_OSC          (LCD_BIAS_OSC_F | LCD_OSC_F2)
             #define LCD_INIT_PWR_ICON_CNTRSTH  (LCD_PWR_ICON_CNTRSTH_F)
             #define LCD_INIT_CONTRASTL         (LCD_CONTRASTL_F | LCD_CONTRASTL_C3 | LCD_CONTRASTL_C0)
@@ -452,6 +449,12 @@ Copyright (c) 2021 Robert R. Puccinelli
         #endif
 
     #endif
+
+
+    // TIME TO CLOCK CONVERSION
+    #define LCD_INIT_D   LCD_INIT_T    ?  (SYSTEM_CLOCK / (1000000 / LCD_INIT_T) / 2 + 1) : 0
+    #define LCD_PWR_D    LCD_PWR_T     ?  (SYSTEM_CLOCK / (1000000 / LCD_PWR_T)  / 2 + 1) : 0
+    #define LCD_WAIT_D   LCD_WAIT_T    ?  (SYSTEM_CLOCK / (1000000 / LCD_WAIT_T) / 2 + 1) : 0
 
 
     // INTERFACE COMPATABILITY WARNING

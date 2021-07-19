@@ -2,9 +2,8 @@
    
 LCD declarations for Padauk microcontrollers.
 
-!!!OUT OF DATE!!!
-ROM Consumed : 109B / 0x6D
-RAM Consumed :  14B / 0x0E
+ROM Consumed : 221B / 0xDD
+RAM Consumed :  11B / 0x0B
 
 
 This software is licensed under GPLv3 <http://www.gnu.org/licenses/>.

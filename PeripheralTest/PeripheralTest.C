@@ -3,9 +3,11 @@ Copyright (c) 2021 Robert R. Puccinelli
 */
 #include	"../system_settings.h"
 //#include	"../pdk_i2c.h"
-//#include	"../pdk_pwm_11b.h"
+#include	"../pdk_pwm_11b.h"
 //#include 	"../pdk_button.h"
-#include 	"../pdk_lcd.h"
+//#include 	"../pdk_lcd.h"
+//#include	"../pdk_eeprom.h"
+
 void	FPPA0 (void)
 {
 	.ADJUST_IC	SYSCLK=IHRC/4, IHRC=16MHz, VDD=5V;		//	SYSCLK=IHRC/4
@@ -37,8 +39,8 @@ void	FPPA0 (void)
 	// 11b PWM FEATURE CHECK //
 	//=======================//
 
-/*
-	
+
+/*	
 // 	USE WITH NO AUTOSOLVER
 	prescaler = 1;			// 6-bit  [1, 4, 16, 64]
 	scalar = 0;				// 5-bit  [0 : 31]
@@ -57,8 +59,8 @@ void	FPPA0 (void)
 	.delay 4000000;
  	PWM_11b_Stop ();
  	PWM_11b_Release ();
-*/
 
+*/
 
 	//======================//
 	// BUTTON FEATURE CHECK //
@@ -74,26 +76,60 @@ void	FPPA0 (void)
 	Button_Release();
 
 */
-/*
-	#define dead_zone_R 2
-	#define dead_zone_F 3
 
-	Byte duty1  =  60;
-	Byte _duty = 100 - duty1;
-	PWMG0DTL	= 0x00;
-	PWMG0DTH = _duty;
-	PWMG0CUBL = 0x00;
-	PWMG0CUBH = 100;
-	PWMG1DTL = 0x00;
-	PWMG1DTH = _duty -dead_zone_F;
-	PWMG1CUBL = 0x00;
-	PWMG1CUBH = 100;
-	$ PWMG0C Enable,Inverse,PB5,SYSCLK;
-	$ PWMG0S INTR_AT_DUTY,/1,/1;
-	.delay dead_zone_R;
-	$ PWMG1C Enable, PA4, SYSCLK;
-	$ PWMG1S INTR_AT_DUTY, /1, /1;
+
+	//===================//
+	// LCD FEATURE CHECK //
+	//===================//
+
+/*
+	lcd_device_addr = LCD_DRIVER;
+
+	LCD_Initialize();
+	lcd_trx_byte = 0x3;
+	LCD_Address_Set();
+	lcd_trx_byte = LCD_A;
+	LCD_Write_Byte();
+	lcd_trx_byte = LCD_Z;
+	LCD_Write_Byte();
+	lcd_trx_byte = LCD_0;
+	LCD_Write_Byte();
+	lcd_trx_byte = LCD_9;
+	LCD_Write_Byte();
+	LCD_MODE_1L();
+	LCD_Cursor_Shift_L();
+	LCD_Cursor_Shift_L();
+	lcd_trx_byte = LCD_9;
+	LCD_Write_Byte();
+	LCD_Cursor_Shift_R();
+	lcd_trx_byte = LCD_9;
+	LCD_Write_Byte();
+	LCD_Read_Byte();
+	LCD_Mode_2L();
+	LCD_Check_Addr();
+	LCD_Home();
+	LCD_Clear();
+	LCD_Release();
 */
+
+	//======================//
+	// EEPROM FEATURE CHECK //
+	//======================//
+/*
+	BYTE mem_buff[4];
+	eeprom_trx_buffer = mem_buff; 
+
+	EEPROM_Initialize();
+	mem_buff[0] = 2;          // Num operations
+	mem_buff[1] = 1;          // Byte address
+	mem_buff[2] = 0b11000011; // operation 1
+	mem_buff[3] = 0b01010101; // operation 2
+	EEPROM_Write();
+
+	mem_buff[1] = 0;          // Read 1B before write
+
+*/
+
 	while (1)
 	{
 		nop;

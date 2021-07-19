@@ -2,9 +2,8 @@
    
 LCD definitions for Padauk microcontrollers.
 
-!!!OUT OF DATE!!!
-ROM Consumed : 109B / 0x6D
-RAM Consumed :  14B / 0x0E
+ROM Consumed : 221B / 0xDD
+RAM Consumed :  11B / 0x0B
 
 
 This software is licensed under GPLv3 <http://www.gnu.org/licenses/>.
@@ -25,12 +24,14 @@ Copyright (c) 2021 Robert R. Puccinelli
 
 BYTE	lcd_device_addr; 	// Device address. Program sets target address w/enum above.
 BYTE	lcd_trx_byte;
-BIT		lcd_detected;
-BIT		lcd_module_initialized;
+BYTE	lcd_flags = 0;
+BIT		lcd_detected : lcd_flags.?;
+BIT		lcd_module_initialized : lcd_flags.?;
 
-lcd_module_initialized = 0;
-lcd_detected = 0;
 
+LCD_Init_Delay =>   LCD_INIT_D
+LCD_Pwr_Delay  =>   LCD_PWR_D
+LCD_Wait_Delay =>   LCD_WAIT_D
 
 //==================//
 // STATIC FUNCTIONS //
@@ -41,9 +42,9 @@ void	LCD_Write_Command(void)
 	#ifidni LCD_COMM_MODE, I2C
 		i2c_device = lcd_device_addr;
 		I2C_Stream_Write_Start();
-		*i2c_buffer = LCD_COMMAND_MODE;
+		i2c_buffer = LCD_COMMAND_MODE;
 		I2C_Stream_Write_Byte();
-		*i2c_buffer = lcd_trx_byte;
+		i2c_buffer = lcd_trx_byte;
 		I2C_Stream_Write_Byte();
 		I2C_Stream_Stop();
 	#endif
@@ -55,11 +56,13 @@ void	LCD_Read_Command(void)
 	#ifidni LCD_COMM_MODE, I2C
 		i2c_device = lcd_device_addr;
 		I2C_Stream_Read_Start();
-		*i2c_buffer = LCD_COMMAND_MODE;
+		i2c_buffer = LCD_COMMAND_MODE;
 		I2C_Stream_Write_Byte();
 		I2C_Stream_Read_Byte_NAck();
-		lcd_trx_byte = *i2c_buffer;
+		lcd_trx_byte = i2c_buffer;
 		I2C_Stream_Stop();
+		if (i2c_slave_ack_bit == 1) lcd_detected = 0;
+		else lcd_detected = 1;
 	#endif
 }
 
@@ -68,9 +71,9 @@ void	LCD_Write_Data(void)
 	#ifidni LCD_COMM_MODE, I2C
 		i2c_device = lcd_device_addr;
 		I2C_Stream_Write_Start();
-		*i2c_buffer = LCD_DATA_MODE;
+		i2c_buffer = LCD_DATA_MODE;
 		I2C_Stream_Write_Byte();
-		*i2c_buffer = lcd_trx_byte;
+		i2c_buffer = lcd_trx_byte;
 		I2C_Stream_Write_Byte();
 		I2C_Stream_Stop();
 	#endif
@@ -81,10 +84,10 @@ void	LCD_Read_Data(void)
 	#ifidni LCD_COMM_MODE, I2C
 		i2c_device = lcd_device_addr;
 		I2C_Stream_Read_Start();
-		*i2c_buffer = LCD_DATA_MODE;
+		i2c_buffer = LCD_DATA_MODE;
 		I2C_Stream_Write_Byte();
 		I2C_Stream_Read_Byte_Nack();
-		lcd_trx_byte = *i2c_buffer;
+		lcd_trx_byte = i2c_buffer;
 		I2C_Stream_Stop();
 	#endif
 }
@@ -99,8 +102,12 @@ void	LCD_Check_Busy (void)
 
 void	LCD_Delay_While_Busy (void)
 {
-	do LCD_Check_Busy();
-	while (lcd_trx_byte);
+	#ifdifi %LCD_DRIVER, %ST7032
+		do LCD_Check_Busy();
+		while (lcd_trx_byte && lcd_detected);
+	#else
+		.delay LCD_Wait_Delay;
+	#endif
 }
 
 
@@ -220,52 +227,60 @@ void	LCD_Initialize	(void)
 {
 	if ( !lcd_module_initialized)
 	{
-		.delay(LCD_INIT_D);
+		.delay(LCD_Init_Delay);
 
 		#ifidni LCD_COMM_MODE, I2C
 			I2C_Initialize();
 		#endif
 
-		#ifidni LCD_DRIVER, ST7032
-			lcd_trx_byte = LCD_INIT_FUNC;
+		#ifidni %LCD_DRIVER, %ST7032
+			lcd_trx_byte = LCD_INIT_FUNC1;
 			LCD_Write_Command();
-			.delay(LCD_WAIT_D);
+			.delay(LCD_Wait_Delay);
 
-			lcd_trx_byte = LCD_INIT_FUNC;
+			lcd_trx_byte = LCD_INIT_FUNC2;
 			LCD_Write_Command();
-			.delay(LCD_WAIT_D);
+			.delay(LCD_Wait_Delay);
 	
 			lcd_trx_byte = LCD_INIT_BIAS_OSC;
 			LCD_Write_Command();
-			.delay(LCD_WAIT_D);
+			.delay(LCD_Wait_Delay);
 
 			lcd_trx_byte = LCD_INIT_CONTRASTL;
 			LCD_Write_Command();
-			.delay(LCD_WAIT_D);
+			.delay(LCD_Wait_Delay);
 	
 			lcd_trx_byte = LCD_INIT_PWR_ICON_CNTRSTH;
 			LCD_Write_Command();
-			.delay(LCD_WAIT_D);
+			.delay(LCD_Wait_Delay);
 
-			lcd_trx_byte = LCD_INIT_FOLLWER;
+			lcd_trx_byte = LCD_INIT_FOLLOWER;
 			LCD_Write_Command();
-			.delay(LCD_PWR_D);
-		#endif
-
-		LCD_Home();				// Set address to 0x00
-		.delay(LCD_WAIT_D);
-		LCD_Check_Addr();		// All input pins pulled high. Not connected == not 0x00
-
-		if (lcd_trx_byte == LCD_L1)
-		{
-			lcd_detected = 1;
-			lcd_module_initialized = 1;
+			.delay(LCD_Pwr_Delay);
 
 			lcd_trx_byte = (LCD_DISP_F | LCD_DISP_ON);
 			LCD_Write_Command();
+			.delay(LCD_Wait_Delay);
 
-			LCD_Clear();
+			lcd_trx_byte = (LCD_CLEAR_F);
+			LCD_Write_Command();
+			.delay(LCD_Init_Delay)
+
+			lcd_trx_byte = (LCD_ENTRY_F | LCD_ENTRY_INC_DDRAM);
+			LCD_Write_Command();
+			.delay(LCD_Wait_Delay)
+
+		#endif
+
+		lcd_module_initialized = 1;
+		LCD_Read_Command();
+
+		if (!lcd_detected)
+		{
+			lcd_module_initialized = 0;
+			I2C_Release();
 		}
+
 	}
 }
 
