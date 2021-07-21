@@ -12,6 +12,8 @@ void	FPPA0 (void)
 {
 	.ADJUST_IC	SYSCLK=IHRC/4, IHRC=16MHz, VDD=5V;		//	SYSCLK=IHRC/4
 
+	ENGINT;		// Enable global interrupt
+
 
 	//===================//
 	// I2C FEATURE CHECK //
@@ -39,8 +41,8 @@ void	FPPA0 (void)
 	// 11b PWM FEATURE CHECK //
 	//=======================//
 
-
-/*	
+/*
+	
 // 	USE WITH NO AUTOSOLVER
 	prescaler = 1;			// 6-bit  [1, 4, 16, 64]
 	scalar = 0;				// 5-bit  [0 : 31]
@@ -59,23 +61,38 @@ void	FPPA0 (void)
 	.delay 4000000;
  	PWM_11b_Stop ();
  	PWM_11b_Release ();
-
 */
+
 
 	//======================//
 	// BUTTON FEATURE CHECK //
 	//======================//
-/*
-	active_a = 0;
-	active_b = 0;
-	button_enabled_a = 0;
-	button_enabled_b = 0;
-	Button_Initialize();
-	Button_Poll();
-	Button_Debounce_Interrupt();	// Call to ensure function is compiled
-	Button_Release();
 
-*/
+// Enable timer interrupt in the Interrupt function
+/*
+
+	Button_Initialize();
+	$ PB.1 OUT, HIGH
+	Button_Poll();
+	$ PB.1 OUT, LOW;
+
+	// Method testing
+	Button_Poll();		// Place in while loop for testing
+	.delay(100000);		//
+	Button_Poll();		// ILRC CLK on ICE is ~35000 kHz
+	$ PB.4 OUT, LOW;	// which does impact debounce timer
+	Button_Poll();		//
+	$ PB.1 OUT, LOW;	//
+	Button_Poll();		//
+	.delay(100000);		//
+	Button_Release();	//
+
+	// Interrupt testing
+//	STOPEXE;			// Place in while loop for testing=
+//	Button_Poll();		// Contact pin to GND to see if wake works
+						// Breakpoint on BTN_TIMER Interrupt
+/*
+
 
 
 	//===================//
@@ -136,6 +153,7 @@ void	FPPA0 (void)
 
 
 
+
 	while (1)
 	{
 		nop;
@@ -147,19 +165,12 @@ void	FPPA0 (void)
 void	Interrupt (void)
 {
 	pushaf;
-/*
-	if (Intrq.T16)
-	{	//	T16 Trig
-		//	User can add code
-		Intrq.T16	=	0;
-		//...
-	}
-*/
-/*
-	if (Intrq.BTN_TIMER)
+
+
+	if (Intrq.TM2)
 	{
 		Button_Debounce_Interrupt();
 	}
-*/
+
 	popaf;
 }

@@ -44,8 +44,6 @@ Delay_Stop  =>  I2C_D_STOP;
 Delay_Buf   =>  I2C_D_BUF;
 
 
-.echo %Delay_High
-
 // Offset target delay
 Easy_Delay	macro	val, cmp
 	#IF	val > cmp

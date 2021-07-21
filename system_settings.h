@@ -42,12 +42,12 @@ Copyright (c) 2021 Robert R. Puccinelli
 //
 //    PA0    -             PB0    -           PC0    X
 //    PA1    X             PB1    -           PC1    X    
-//    PA2    X             PB2    -           PC2    X
-//    PA3    STEP_D        PB3    -           PC3    X
+//    PA2    X             PB2    BTN         PC2    X
+//    PA3    STEP_D        PB3    BTN         PC3    X
 //    PA4    STEP_S        PB4    BTN         PC4    X
 //    PA5    -             PB5    PWM-11b     PC5    X
-//    PA6    I2C_SDA       PB6    BTN         PC6    X
-//    PA7    I2C_SCL       PB7    BTN         PC7    X
+//    PA6    I2C_SDA       PB6    -           PC6    X
+//    PA7    I2C_SCL       PB7    -           PC7    X
 //
 //    TM16   -
 //    TM2    BTN
@@ -210,7 +210,7 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define BTN_DEBOUNCE_T  5       // ms to wait before validating button state    
     #define BTN_TIMER_FREQ  ILRC_HZ // ILRC_HZ is defined in IC definition above
     #define BTN_TIMER_DIV   31      // [0 : 31] Clock divider
-    //  # of timer cycles = (timer Hz / (clock divider + 1)) x (wait in ms / 1000);
+    //  # of timer cycles = (timer Hz / ( 2 x (clock divider + 1)) x (wait in ms / 1000));
     //  # of timer cycles MUST BE [1:255]
     //
     //  Example:
@@ -231,12 +231,12 @@ Copyright (c) 2021 Robert R. Puccinelli
 	#define BTN_USE_PB    1        // Options: Disable bank: 0 / Enable bank: 1
     #define BTN_PB0       0        // Options: 0 / 1
     #define BTN_PB1       0        // Options: 0 / 1
-    #define BTN_PB2       0        // Options: 0 / 1
-    #define BTN_PB3       0        // Options: 0 / 1
+    #define BTN_PB2       1        // Options: 0 / 1
+    #define BTN_PB3       1        // Options: 0 / 1
     #define BTN_PB4       1        // Options: 0 / 1
     #define BTN_PB5       0        // Options: 0 / 1
-    #define BTN_PB6       1        // Options: 0 / 1
-    #define BTN_PB7       1        // Options: 0 / 1
+    #define BTN_PB6       0        // Options: 0 / 1
+    #define BTN_PB7       0        // Options: 0 / 1
 
     #define BTN_USE_PC    0        // Options: Disable bank: 0 / Enable bank: 1
     #define BTN_PC0       0        // Options: 0 / 1
@@ -263,8 +263,6 @@ Copyright (c) 2021 Robert R. Puccinelli
                          (BTN_PA1 << 1) | \
                          (BTN_PA0 << 0))
 
-        #define BTN_NUM_CB_A    BTN_PA7 + BTN_PA6 + BTN_PA5 + BTN_PA4 +\
-                                BTN_PA3 + BTN_PA2 + BTN_PA1 + BTN_PA0
     #endif
     #if BTN_USE_PB
         #define BTN_PB   ((BTN_PB7 << 7) | \
@@ -276,8 +274,6 @@ Copyright (c) 2021 Robert R. Puccinelli
                          (BTN_PB1 << 1) | \
                          (BTN_PB0 << 0))
 
-        #define BTN_NUM_CB_B    BTN_PB7 + BTN_PB6 + BTN_PB5 + BTN_PB4 +\
-                                BTN_PB3 + BTN_PB2 + BTN_PB1 + BTN_PB0
     #endif
     #if BTN_USE_PC
         #define BTN_PC   ((BTN_PC7 << 7) | \
@@ -288,9 +284,6 @@ Copyright (c) 2021 Robert R. Puccinelli
                          (BTN_PC2 << 2) | \
                          (BTN_PC1 << 1) | \
                          (BTN_PC0 << 0))
-
-        #define BTN_NUM_CB_C    BTN_PC7 + BTN_PC6 + BTN_PC5 + BTN_PC4 +\
-                                BTN_PC3 + BTN_PC2 + BTN_PC1 + BTN_PC0
     #endif
 
     /////////////////////////
