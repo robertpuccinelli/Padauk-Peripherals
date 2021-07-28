@@ -7,6 +7,9 @@ PROJECT=PRE_FILE
 ~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_button.c
 ~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_lcd.c
 ~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_eeprom.c
+~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_timer_8b.c
+~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_step_dir.c
+~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_common.c
 [HEAD]
 ~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_i2c.h
 ~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_pwm_11b.h
@@ -15,6 +18,8 @@ PROJECT=PRE_FILE
 ~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_button.h
 ~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_lcd.h
 ~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_eeprom.h
+~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_common.h
+~C:\Users\Robby\git_Windows\Padauk_Peripherals\pdk_timer_8b.h
 [DEPEND]
 ~$:INC_PDK\PMS132.INC
 ~PeripheralTest.PRE

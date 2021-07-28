@@ -7,6 +7,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 //#include 	"../pdk_button.h"
 //#include 	"../pdk_lcd.h"
 //#include	"../pdk_eeprom.h"
+#include	"../pdk_common.h"
 
 void	FPPA0 (void)
 {
@@ -72,7 +73,7 @@ void	FPPA0 (void)
 /*
 
 	Button_Initialize();
-	$ PB.1 OUT, HIGH
+	$ PB.1 OUT, HIGH	// Short PB.1 with a button input pin
 	Button_Poll();
 	$ PB.1 OUT, LOW;
 
@@ -88,7 +89,7 @@ void	FPPA0 (void)
 	Button_Release();	//
 
 	// Interrupt testing
-//	STOPEXE;			// Place in while loop for testing=
+//	STOPEXE;			// Place in while loop for testing
 //	Button_Poll();		// Contact pin to GND to see if wake works
 						// Breakpoint on BTN_TIMER Interrupt
 /*
@@ -152,6 +153,13 @@ void	FPPA0 (void)
 */
 
 
+	//=========================//
+	// GENERAL UTILITIES CHECK //
+	//=========================//
+
+
+	byte_divide();
+
 
 
 	while (1)
@@ -169,7 +177,7 @@ void	Interrupt (void)
 
 	if (Intrq.TM2)
 	{
-		Button_Debounce_Interrupt();
+//		Button_Debounce_Interrupt();
 	}
 
 	popaf;
