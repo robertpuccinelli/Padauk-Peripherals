@@ -2,11 +2,14 @@
 Copyright (c) 2021 Robert R. Puccinelli
 */
 #include	"../system_settings.h"
+//#include	"../pdk_math.h"
+#include "../pdk_timer_8b.h"
 //#include	"../pdk_i2c.h"
 //#include	"../pdk_pwm_11b.h"
 //#include 	"../pdk_button.h"
 //#include 	"../pdk_lcd.h"
 //#include	"../pdk_eeprom.h"
+
 
 void	FPPA0 (void)
 {
@@ -14,6 +17,72 @@ void	FPPA0 (void)
 
 	ENGINT;		// Enable global interrupt
 
+	//====================//
+	// MATH UTILITY CHECK //
+	//====================//
+
+/*
+	math_dividend = 255;
+	math_divisor = 1;
+	$ PA.7 OUT, HIGH;
+	byte_divide();
+	assert
+	$ PA.7 LOW;
+
+	math_dividend = 65535;
+	math_divisor = 1;
+	$ PA.7 HIGH;
+	word_divide();
+	$ PA.7 LOW;
+
+	math_dividend = 16777215;
+	math_divisor = 1;
+	$ PA.7 HIGH;
+	eword_divide();
+	$ PA.7 LOW;
+
+	math_mult_a = 255;
+	math_mult_b = 255;
+	$ PA.7 HIGH;
+	byte_multiply();
+	$ PA.7 LOW;
+
+	math_mult_a = 65535;
+	math_mult_b = 65535;
+	$ PA.7 HIGH;
+	word_multiply();
+	$ PA.7 LOW;
+
+*/
+
+
+	//========================//
+	// 8b TIMER UTILITY CHECK //
+	//========================//
+
+	// Period solver test
+
+	Timer2_Initialize();
+	timer8_target_freq = 200; // 5ms
+	timer8_use_solver  = 1;
+	Timer2_Set_Parameters();
+	Timer2_Start();
+	.delay(1000000)
+	Timer2_Stop();
+	Timer2_Release();
+
+
+	// PWM solver test
+	
+	Timer3_Initialize();
+	timer8_target_freq = 20; // 50ms
+	timer8_duty_percent = 33;
+	timer8_use_solver  = 1;
+	Timer3_Set_Parameters();
+	Timer3_Start();
+	.delay(1000000)
+	Timer3_Stop();
+	Timer3_Release();
 
 	//===================//
 	// I2C FEATURE CHECK //
@@ -72,7 +141,7 @@ void	FPPA0 (void)
 /*
 
 	Button_Initialize();
-	$ PB.1 OUT, HIGH
+	$ PB.1 OUT, HIGH	// Short PB.1 with a button input pin
 	Button_Poll();
 	$ PB.1 OUT, LOW;
 
@@ -88,7 +157,7 @@ void	FPPA0 (void)
 	Button_Release();	//
 
 	// Interrupt testing
-//	STOPEXE;			// Place in while loop for testing=
+//	STOPEXE;			// Place in while loop for testing
 //	Button_Poll();		// Contact pin to GND to see if wake works
 						// Breakpoint on BTN_TIMER Interrupt
 /*
@@ -153,7 +222,7 @@ void	FPPA0 (void)
 
 
 
-
+	
 	while (1)
 	{
 		nop;
@@ -169,7 +238,7 @@ void	Interrupt (void)
 
 	if (Intrq.TM2)
 	{
-		Button_Debounce_Interrupt();
+//		Button_Debounce_Interrupt();
 	}
 
 	popaf;
