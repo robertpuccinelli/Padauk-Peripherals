@@ -3,7 +3,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 */
 #include	"../system_settings.h"
 //#include	"../pdk_math.h"
-#include "../pdk_timer_8b.h"
+//#include "../pdk_timer_8b.h"
 //#include	"../pdk_i2c.h"
 //#include	"../pdk_pwm_11b.h"
 //#include 	"../pdk_button.h"
@@ -60,12 +60,15 @@ void	FPPA0 (void)
 	// 8b TIMER UTILITY CHECK //
 	//========================//
 
+/*
 	// Period solver test
 
 	Timer2_Initialize();
 	timer8_target_freq = 200; // 5ms
 	timer8_use_solver  = 1;
+	$ PA.7 OUT, HIGH;
 	Timer2_Set_Parameters();
+	$ PA.7 LOW;
 	Timer2_Start();
 	.delay(1000000)
 	Timer2_Stop();
@@ -78,11 +81,28 @@ void	FPPA0 (void)
 	timer8_target_freq = 20; // 50ms
 	timer8_duty_percent = 33;
 	timer8_use_solver  = 1;
+	$ PA.7 HIGH;
 	Timer3_Set_Parameters();
+	$ PA.7 LOW;
 	Timer3_Start();
 	.delay(1000000)
 	Timer3_Stop();
 	Timer3_Release();
+
+	// Solver-free memory check
+
+	Timer2_Initialize();
+	Timer2_Set_Parameters();
+	Timer2_Start();
+	Timer2_Stop();
+	Timer2_Release();
+
+	Timer3_Initialize();
+	Timer3_Set_Parameters();
+	Timer3_Start();
+	Timer3_Stop();
+	Timer3_Release();
+*/
 
 	//===================//
 	// I2C FEATURE CHECK //
