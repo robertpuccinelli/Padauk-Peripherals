@@ -36,7 +36,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 //===========//
 
 EXTERN EWORD &math_remainder;
-EXTERN EWORD &math_quotien;
+EXTERN EWORD &math_quotient;
 EXTERN EWORD &math_divisor;
 EXTERN EWORD &math_dividend;
 

@@ -9,24 +9,12 @@ ROM Consumed : 297B / 0x129  -  WITH SOLVER
 RAM Consumed :  33B / 0x12   -  WITH SOLVER
 
 	
-NOTE: 
+DOCUMENTATION ERROR:
 
-	ICs with an 8x8 multiplier have the option to solve for register settings
-	that result in an output frequency closest to the target frequency. However,
-	in a worst-case scenario it can take ~2M + 2xPWM_Clk cycles to iterate through all options.
-	Worst-case is a very fast PWM clock and a very slow target PWM frequency, < slowest possible PWM.
-	2nd worst case is very fast PWM frequency (~PWM clock). ~2M cycles
-	
-	In the PMS132 datasheet frequency can be solved with the following equation:
-
-	PWM_Frequency = PWM_Clk / [ Prescaler x (Scaler + 1) x (Counter + 1) ]
-
-			Prescaler 	: [1, 4, 16, 64]
-			Scaler		: [0 : 31]
-			Counter		: [0 : 2046], in steps of 2
-
-	The fastest PWM is (PWM_Clk) and the slowest is (PWM_Clk / 4,192,256).
-
+	The PMS132 datasheet claims that the bound register for a 8b timer
+	can range from 0 - 255. That was not observed to be the case for
+	a timer in period mode. When bound = 0 in period mode, the output
+	will not change states.
 
 This software is licensed under GPLv3 <http://www.gnu.org/licenses/>.
 Any modifications or distributions have to be licensed under GPLv3.
@@ -37,29 +25,33 @@ Copyright (c) 2021 Robert R. Puccinelli
 */
 
 #include "system_settings.h"
+#include "pdk_math.h"
+
 
 //===========//
 // VARIABLES //
 //===========//
 
+BYTE timer8_flags     = 0;
+BYTE timer8_prescalar = 0; // 6-bit  [1, 4, 16, 64]
+BYTE timer8_scalar    = 0; // 5-bit  [0 : 31]
+BYTE timer8_bound     = 0; // 8-bit bound register
 
-BYTE timer8_flags = 0;
-BIT  timer8_tm2_init : timer8_flags.?;
-BIT  timer8_tm3_init : timer8_flags.?;
+BIT  timer8_tm2_init   : timer8_flags.?;
+BIT  timer8_tm3_init   : timer8_flags.?;
 BIT  timer8_tm2_active : timer8_flags.?;
 BIT  timer8_tm3_active : timer8_flags.?;
-BIT  timer8_use_param_solver : timer8_flags.?; // Flag to select PWM solver, if available
+BIT  timer8_use_solver : timer8_flags.?; // Flag to select solver, if available
+BIT  timer8_use_6b_pwm : timer8_flags.?;
 
-BYTE	timer8_prescalar = 0;		// 6-bit  [1, 4, 16, 64]
-WORD	timer8_scalar = 0;			// 5-bit  [0 : 31]
-WORD	timer8_bound = 0;			// 8-bit bound register
+#IF TIMER8_SOLVER_ENABLE
 
-#IF SOLVER_OPTION
-	STATIC BIT   tm8_use_6b_pwm : timer8_flags.?;
-	STATIC BYTE  temp_byte = 0;
-	STATIC EWORD tm8_clock_ratio = 0;
-	STATIC EWORD tm8_pwm_clk     = 0; // Hz
-	EWORD	     tm8_pwm_target  = 0; // Hz
+	STATIC EWORD  timer8_clock_ratio  = 0;
+	STATIC EWORD  timer8_pwm_clk      = 0;
+	STATIC BYTE  &timer8_tolerance    = timer8_bound$0;
+	BYTE         &timer8_duty_percent = timer8_bound$0;       // Integer, [0 : 100]
+	EWORD        &timer8_target_freq  = timer8_clock_ratio$0; // Hz
+
 #ENDIF
 
 
@@ -67,142 +59,132 @@ WORD	timer8_bound = 0;			// 8-bit bound register
 // STATIC FUNCTIONS //
 //==================//
 
+#IF TIMER8_SOLVER_ENABLE
 
 
-
-/*
-static void Timer8_Set_Parameters(void)
-
-
-
-static void Solve_PWM_Parameters(void)
+static void Timer8_Solve_Duty(void)
 {
+	// 50% duty cycle if no target given
+	if (!timer8_duty_percent || (timer8_duty_percent > 100)) timer8_duty_percent = 50;
 
-	if (!tm8_pwm_target) tm8_pwm_target = (tm8_pwm_clk >> 4); // Default : Clk / 16
+	// Multiply clock by duty percent
+	math_mult_a = timer8_pwm_clk;
+	math_mult_b = timer8_duty_percent;
+	byte_multiply();
 
-	// A poor man's division.
-	// Find how many PWM_targets fit into PWM_Clk
-	// Stop once division has reached or passed 0
-	// Takes longer for slower PWMs, up to PWM_Clk cycles
-	clock_ratio = 0;
-	do
-	{
-		clock_ratio++;
-		tm8_pwm_clk -= tm8_pwm_target;
-	} while(  !flag.1 );
+	// Convert bound to integer
+	math_dividend = math_product;
+	math_divisor = 100;
+	word_divide();
 
-	clock_ratio--;
+	timer8_bound = math_quotient$0 - 1;
+}
+
+
+static void Timer8_Solve_PWM(void)
+{
+	if (!timer8_target_freq) timer8_target_freq = (timer8_pwm_clk >> 4); // Default : Clk / 16
+
+
+	// PWM_CLK / BIT_DEPTH => PWM CYCLES per SECOND
+	math_dividend = timer8_pwm_clk;
+	if (timer8_use_6b_pwm) math_divisor = 64;
+	else math_divisor = 256;
+	eword_divide();
+
+
+	// PWM CYCLES per SECOND / TARGET CYCLES per SECOND => PRESCALAR x (SCALAR + 1)
+	math_dividend  = math_quotient;
+	math_divisor = timer8_target_freq;
+	eword_divide();
+	timer8_clock_ratio = math_quotient;
+
 
 	// Boost low freqs into solvable range
-	// Slowest PWM possible is PWM_clk / 4,192,256
-	// Going below this results in worst-case solver
-	if (tm8_use_6b_pwm) temp_byte = 2016;
-	else temp_byte = 8192;
-
-	tm8_prescalar = 0;
-	while( (clock_ratio > temp_byte) && (pre_count < 6) )
+	timer8_prescalar = 0;
+	while( (timer8_clock_ratio > 32) && (timer8_prescalar < 6) )
 	{ 
-		clock_ratio = clock_ratio >> 2;
-		tm8_prescalar += 2;
+		timer8_clock_ratio >>= 2;
+		timer8_prescalar += 2;
 	}
 
 
-	// Convert shifts into prescaler value
-	if 		(tm8_prescalar == 0)	{tm8_prescalar = 1;}	// 0b00
-	else if	(tm8_prescalar == 2)	{tm8_prescalar = 4;}	// 0b01
-	else if (tm8_prescalar == 4)	{tm8_prescalar = 16;}	// 0b10
-	else if (tm8_prescalar == 6)	{tm8_prescalar = 64;}	// 0b11
+	// Convert shifts into prescalar value
+	if 		(timer8_prescalar == 0)	{timer8_prescalar = 1;}	// 0b00
+	else if	(timer8_prescalar == 2)	{timer8_prescalar = 4;}	// 0b01
+	else if (timer8_prescalar == 4)	{timer8_prescalar = 16;}	// 0b10
+	else if (timer8_prescalar == 6)	{timer8_prescalar = 64;}	// 0b11
 
 
+	// Resulting clock ratio is the scalar
+	timer8_scalar = timer8_clock_ratio;
+}
 
-	// Solver setup
-	scalar = 32;	// 1 above max possible value in PWM formula
-	bound = 257; // 2 above max possible value
-	product = 0;	// Scaler x Counter
-	net = 0;		// f_clk / (f_target * Prescaler) - (Scaler x Counter)
-	tolerance = 0;	// Can't solve for prime numbers, etc. Slowly increase tolerance.
+
+static void Timer8_Solve_Period(void)
+{
+
+	if (!timer8_target_freq) timer8_target_freq = (timer8_pwm_clk >> 4); // Default : Clk / 16
+
+	// Solve for number of targets per unit of pwm clock
+	math_dividend = timer8_pwm_clk;
+	math_divisor  = timer8_target_freq;
+	eword_divide();
+	timer8_clock_ratio = math_quotient;
+
+
+	// Correction for period mode since output alternates each cycle
+	timer8_clock_ratio >>= 1;
+	timer8_clock_ratio += 1;
+
+
+	// Boost low freqs into solvable range
+	timer8_prescalar = 0;
+	while( (timer8_clock_ratio > 8192) && (timer8_prescalar < 6) )
+	{ 
+		timer8_clock_ratio >>= 2;
+		timer8_prescalar += 2;
+	}
+
+
+	// Convert shifts into prescalar value
+	if 		(timer8_prescalar == 0)	{timer8_prescalar = 1;}	// 0b00
+	else if	(timer8_prescalar == 2)	{timer8_prescalar = 4;}	// 0b01
+	else if (timer8_prescalar == 4)	{timer8_prescalar = 16;}	// 0b10
+	else if (timer8_prescalar == 6)	{timer8_prescalar = 64;}	// 0b11
 
 
 	// Find the closest combination of scalar and count registers through brute force.
-	// High SYSCLK recommended. Can take ~2M instructions to solve in the worst case.
-	do						// Tolerance
+	timer8_tolerance = -1;         // Adjust tolerance to solve for prime numbers
+	do                      // Tolerance loop
 	{
-	counter = 2049;	// Restore counter for next parameter scan
-
-		do					// Scalar
+		timer8_scalar = 32;
+		timer8_tolerance++;
+		do                  // Scalar loop
 		{
-			bound -=2;	// Counter can only be an odd number in PWM formula
-			scalar = 33;	// Restore scalar for next parameter scan	
+			math_dividend = timer8_clock_ratio;
+			math_divisor = timer8_scalar;
+			word_divide();
+			timer8_scalar--;
 
-			do			// Counter
-			{
-				scalar--;
-				MULOP = scalar; // Load scalar into the multiplier
-				A = counter$0;					// Multiply lower byte of counter with scalar 
-				mul;
-				product$0 = A;					// Store the product
-				product$1 = MULRH;	
-				A = counter$1;					// Multiply upper byte of counter with scalar
-				mul;
-				product$1 += A;					// Add product to stored high byte, MULRH is always 0 here
-				net = clock_ratio - product;	// How close to zero?
+		} while((math_remainder > timer8_tolerance) && (timer8_scalar > 0));
+	} while ((math_remainder > timer8_tolerance) && (timer8_tolerance < 32));
 
-
-				// Compiler can only handle simple comparisons.
-				if (flag.1) { net = -net; }
-				temp_byte = tolerance + 1;
-
-
-			// Break if net is within tolerance or counter finished scanning
-			} while(  (net > temp_byte) && (scalar > 1)  );
-			
-
-		// Break if net is within tolerance or scalar finished scanning
-		} while( (net >= temp_byte) && (counter > 1) );
-			
-		tolerance++;	// Increment tolerance for next parameter scan
-
-	// Break if net	is within tolerance or tolerance exceeds limit
-	} while ( (net > temp_byte) && (tolerance < 65) );	// Max tolerance: 64 -> (max scalar x space between count values)
-
-	
-	// If scanning failed, use the slowest PWM
-	// Consider using a slower clock if you need a very slow PWM
-	if (tolerance > 65 && net) 
-	{
-		scalar = 32;
-		counter = 2047;
-	}
-
-
-	scalar--;	// Decrement scalar to compensate for +1 in formula
-	counter--;	// Decrement scalar to compensate for +1 in formula
-
+	timer8_bound = math_quotient$0;
 }
 
 #ENDIF //SOLVER_OPTION
-
-*/
 
 //===================//
 // PROGRAM FUNCTIONS //
 //===================//
 
+
+#IF TIMER8_USE_TM2
+
 void Timer2_Stop(void)
 {
-//	if (timer8_tm2_init) $ TIMER8_2_CTL STOP, TIMER8_2_CTL_SETTINGS;
-}
-
-
-void Timer2_Initialize(void)
-{
-	#IF TIMER8_USE_2
-		if (!timer8_tm2_init)
-		{
-			Timer2_Stop();
-			timer8_tm2_init = 1;
-		}
-	#ENDIF
+	if (timer8_tm2_init) $ TIMER8_2_CTL STOP, TIMER8_2_OUT, TIMER8_2_MODE, TIMER8_2_POL;
 }
 
 
@@ -211,7 +193,7 @@ void Timer2_Start(void)
 	if (timer8_tm2_init) 
 	{
 		TIMER8_2_CNT = 0;
-//		$ TIMER8_2_CTL TIMER8_2_CLK, TIMER8_2_CTL_SETTINGS;
+		$ TIMER8_2_CTL TIMER8_2_CLK, TIMER8_2_OUT, TIMER8_2_MODE, TIMER8_2_POL;
 	}
 }
 
@@ -220,15 +202,22 @@ void Timer2_Set_Parameters(void)
 {
 	if (timer8_tm2_init)
 	{
-		if (timer8_use_param_solver) 
+		if (timer8_use_solver) 
 		{
-			if (TIMER8_2_6BIT) tm8_use_6b_pwm = 1;
-			else tm8_use_6b_pwm = 0;
-			tm8_pwm_clk =  TIMER8_2_HZ;
-//			Timer8_Solve_Parameters();
+			timer8_pwm_clk =  TIMER8_2_HZ;
+			#IFIDNI TIMER8_2_MODE, PWM
+				if (TIMER8_2_6BIT) timer8_use_6b_pwm = 1;
+				else timer8_use_6b_pwm = 0;
+				Timer8_Solve_PWM();
+				Timer8_Solve_Duty();
+			#ELSE
+				Timer8_Solve_Period();
+			#ENDIF	
 		}
 
-		switch (1)//prescaler)
+		TIMER8_2_BND = timer8_bound;
+
+		switch (timer8_prescalar)
 		{
 			case 64 :   TIMER8_2_SCL = TIMER8_2_RES | 0b01100000 | timer8_scalar;
 						break;
@@ -241,14 +230,29 @@ void Timer2_Set_Parameters(void)
 
 			default :   TIMER8_2_SCL = TIMER8_2_RES | timer8_scalar;
 
-		}
-//		TIMER8_2_SCL = 
-//		TIMER8_2_BND = bound;
+		}	
 	}
+}
+
+
+void Timer2_Initialize(void)
+{
+		if (!timer8_tm2_init)
+		{
+			timer8_tm2_init = 1;
+			Timer2_Stop();
+		}
 }
 
 
 void Timer2_Release(void)
 {
-	if (timer8_tm2_init) {TIMER8_2_CTL = 0;}
+	if (timer8_tm2_init) 
+	{
+		TIMER8_2_CTL = 0;
+		timer8_tm2_init = 0;
+	}
 }
+
+#ENDIF // TIMER8_USE_TM2
+

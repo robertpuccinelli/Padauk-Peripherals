@@ -44,8 +44,8 @@ Copyright (c) 2021 Robert R. Puccinelli
 // Use this area to track which resources are used and where
 //
 //    PA0    -             PB0    -           PC0    X
-//    PA1    X             PB1    -           PC1    X    
-//    PA2    X             PB2    BTN         PC2    X
+//    PA1    X             PB1    BTN         PC1    X    
+//    PA2    X             PB2    TM2         PC2    X
 //    PA3    STEP_D        PB3    BTN         PC3    X
 //    PA4    STEP_S        PB4    BTN         PC4    X
 //    PA5    -             PB5    PWM-11b     PC5    X
@@ -94,7 +94,7 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define HAS_ADC        1
     #define HAS_12B_ADC    1
     #define HAS_OPA        0
-    #define ILRC_HZ        53000    // Varies with voltage + temperature
+    #define ILRC_HZ        54000    // Varies with voltage + temperature
 	#define INSTR_CYCLES   2        // 2T architecture - DO NOT CHANGE
 #endif
 
@@ -233,8 +233,8 @@ Copyright (c) 2021 Robert R. Puccinelli
     
 	#define BTN_USE_PB    1        // Options: Disable bank: 0 / Enable bank: 1
     #define BTN_PB0       0        // Options: 0 / 1
-    #define BTN_PB1       0        // Options: 0 / 1
-    #define BTN_PB2       1        // Options: 0 / 1
+    #define BTN_PB1       1        // Options: 0 / 1
+    #define BTN_PB2       0        // Options: 0 / 1
     #define BTN_PB3       1        // Options: 0 / 1
     #define BTN_PB4       1        // Options: 0 / 1
     #define BTN_PB5       0        // Options: 0 / 1
@@ -500,11 +500,12 @@ Copyright (c) 2021 Robert R. Puccinelli
 //==========//
 
 #ifidni PERIPH_TIMER8, 1
-	#define TIMER8_USE_2    1
-	#define TIMER8_USE_3    0
+	#define TIMER8_USE_TM2       1
+	#define TIMER8_USE_TM3       0
+	#define TIMER8_SOLVER_ENABLE 1
 
 	// TIMER 2
-	#define TIMER8_2_HZ     ILRC_HZ
+	#define TIMER8_2_HZ     ILRC_HZ  //ILRC_HZ, SYSTEM_CLOCK, other
 	#define TIMER8_2_6BIT   0        // 0: 8-bit PWM;           1: 6-bit PWM
 	#define TIMER8_2_INV    0        // 0: Out polarity normal; 1: Out polarity inverted
 
@@ -513,9 +514,9 @@ Copyright (c) 2021 Robert R. Puccinelli
 	#define TIMER8_2_SCL    TM2S
 	#define TIMER8_2_BND    TM2B
 
-	#define TIMER8_2_CLK    ILRC
-	#define TIMER8_2_OUT    Disable //Ex: Disable, PB2, PA3, PB4
-	#define TIMER8_2_MODE   Period  // Period, PWM
+	#define TIMER8_2_CLK    ILRC // ILRC, SYSCLK, other 
+	#define TIMER8_2_OUT    PB2    //Ex: Disable, PB2, PA3, PB4
+	#define TIMER8_2_MODE   Period // Period, PWM
 
 
 	// TIMER 3
@@ -537,7 +538,7 @@ Copyright (c) 2021 Robert R. Puccinelli
     // DO NOT TOUCH -- START //
     ///////////////////////////
 
-	#if TIMER8_USE_2
+	#if TIMER8_USE_TM2
 
 		#if TIMER8_2_6BIT
 			#define TIMER8_2_RES 0b10000000
@@ -554,7 +555,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 	#endif
 
 
-	#if TIMER8_USE_3
+	#if TIMER8_USE_TM3
 
 		#if TIMER8_3_6BIT
 			#define TIMER8_3_RES 0b10000000

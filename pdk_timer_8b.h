@@ -40,20 +40,18 @@ Copyright (c) 2021 Robert R. Puccinelli
 // VARIABLES //
 //===========//
 
-EXTERN BYTE active_timer;	// Timer number to use, ie 2 or 3
-EXTERN BYTE	prescaler;		// 6-bit  [1, 4, 16, 64]
-EXTERN WORD	scalar;			// 5-bit  [0 : 31]
-EXTERN WORD	bound;			// 8-bit bound register
+EXTERN BYTE	timer8_prescaler;  // 6-bit  [1, 4, 16, 64]
+EXTERN WORD	timer8_scalar;     // 5-bit  [0 : 31]
+EXTERN WORD	timer8_bound;      // 8-bit bound register
 
 
-//======================//
-// PWM SOLVER VARIABLES //
-//======================//
+// SOLVER VARIABLES
 
-#IF SOLVER_OPTION
+#IF TIMER8_SOLVER_ENABLE
 
-EXTERN DWORD	f_pwm_target;	// Hz
-EXTERN BIT		use_pwm_solver; // Flag to select PWM solver, if available
+EXTERN BIT    timer8_use_solver;   // Flag to select parameter solver
+EXTERN BYTE   timer8_duty_percent; // Duty [0 : 100]
+EXTERN EWORD &timer8_target_freq;  // Target PWM Hz
 
 #ENDIF
 
@@ -62,9 +60,8 @@ EXTERN BIT		use_pwm_solver; // Flag to select PWM solver, if available
 // PROGRAM FUNCTIONS //
 //===================//
 
-void    Timer_Select(void);
-void	Timer_Initialize (void);
-void	Timer_Set_Parameters(void);
-void	Timer_Start (void);
-void	Timer_Stop (void);
-void	Timer_Release (void);
+void	Timer2_Initialize     (void);
+void	Timer2_Set_Parameters (void);
+void	Timer2_Start          (void);
+void	Timer2_Stop           (void);
+void	Timer2_Release        (void);
