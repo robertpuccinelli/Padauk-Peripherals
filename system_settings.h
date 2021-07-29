@@ -49,7 +49,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 //    PA3    STEP_D        PB3    BTN         PC3    X
 //    PA4    STEP_S        PB4    BTN         PC4    X
 //    PA5    -             PB5    PWM-11b     PC5    X
-//    PA6    I2C_SDA       PB6    -           PC6    X
+//    PA6    I2C_SDA       PB6    TM3         PC6    X
 //    PA7    I2C_SCL       PB7    -           PC7    X
 //
 //    TM16   -
@@ -71,6 +71,9 @@ Copyright (c) 2021 Robert R. Puccinelli
 //============================//
 // SUPPORTED MICROCONTROLLERS //
 //============================//
+
+
+#define ICE_ILRC_HZ 34700	// ILRC clock of ICE for code validation
 
 
 #ifidni IC_TARGET, PMS150C
@@ -501,28 +504,28 @@ Copyright (c) 2021 Robert R. Puccinelli
 
 #ifidni PERIPH_TIMER8, 1
 	#define TIMER8_USE_TM2       1
-	#define TIMER8_USE_TM3       0
+	#define TIMER8_USE_TM3       1
 	#define TIMER8_SOLVER_ENABLE 1
 
 	// TIMER 2
-	#define TIMER8_2_HZ     ILRC_HZ  //ILRC_HZ, SYSTEM_CLOCK, other
-	#define TIMER8_2_6BIT   0        // 0: 8-bit PWM;           1: 6-bit PWM
-	#define TIMER8_2_INV    0        // 0: Out polarity normal; 1: Out polarity inverted
+	#define TIMER8_2_HZ     ICE_ILRC_HZ //ILRC_HZ, SYSTEM_CLOCK, other. ICE_ILRC_HZ for TESTING ONLY
+	#define TIMER8_2_6BIT   0           // 0: 8-bit PWM;           1: 6-bit PWM
+	#define TIMER8_2_INV    0           // 0: Out polarity normal; 1: Out polarity inverted
 
 	#define TIMER8_2_CTL    TM2C
 	#define TIMER8_2_CNT    TM2CT
 	#define TIMER8_2_SCL    TM2S
 	#define TIMER8_2_BND    TM2B
 
-	#define TIMER8_2_CLK    ILRC // ILRC, SYSCLK, other 
-	#define TIMER8_2_OUT    PB2    //Ex: Disable, PB2, PA3, PB4
+	#define TIMER8_2_CLK    ILRC   // ILRC, SYSCLK, other 
+	#define TIMER8_2_OUT    PB2    // Ex: Disable, PB2, PA3, PB4
 	#define TIMER8_2_MODE   Period // Period, PWM
 
 
 	// TIMER 3
-	#define TIMER8_3_HZ     ILRC_HZ
-	#define TIMER8_3_6BIT   0        // 0: 8-bit PWM;           1: 6-bit PWM
-	#define TIMER8_3_INV    0        // 0: Out polarity normal; 1: Out polarity inverted
+	#define TIMER8_3_HZ     ICE_ILRC_HZ //ILRC_HZ, SYSTEM_CLOCK, other. ICE_ILRC_HZ for TESTING ONLY
+	#define TIMER8_3_6BIT   1           // 0: 8-bit PWM;           1: 6-bit PWM
+	#define TIMER8_3_INV    1           // 0: Out polarity normal; 1: Out polarity inverted
 
 	#define TIMER8_3_CTL    TM3C
 	#define TIMER8_3_CNT    TM3CT
@@ -530,8 +533,8 @@ Copyright (c) 2021 Robert R. Puccinelli
 	#define TIMER8_3_BND    TM3B
 
 	#define TIMER8_3_CLK    ILRC
-	#define TIMER8_3_OUT    Disable //Ex: Disable, PB5, PB6, PB7
-	#define TIMER8_3_MODE   Period  // Period, PWM
+	#define TIMER8_3_OUT    PB6     //Ex: Disable, PB5, PB6, PB7
+	#define TIMER8_3_MODE   PWM     // Period, PWM
 
 
     ///////////////////////////

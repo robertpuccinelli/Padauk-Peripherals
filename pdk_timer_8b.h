@@ -50,7 +50,7 @@ EXTERN WORD	timer8_bound;      // 8-bit bound register
 #IF TIMER8_SOLVER_ENABLE
 
 EXTERN BIT    timer8_use_solver;   // Flag to select parameter solver
-EXTERN BYTE   timer8_duty_percent; // Duty [0 : 100]
+EXTERN BYTE  &timer8_duty_percent; // Duty [0 : 100]
 EXTERN EWORD &timer8_target_freq;  // Target PWM Hz
 
 #ENDIF
@@ -65,3 +65,9 @@ void	Timer2_Set_Parameters (void);
 void	Timer2_Start          (void);
 void	Timer2_Stop           (void);
 void	Timer2_Release        (void);
+
+void	Timer3_Initialize     (void);
+void	Timer3_Set_Parameters (void);
+void	Timer3_Start          (void);
+void	Timer3_Stop           (void);
+void	Timer3_Release        (void);
