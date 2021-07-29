@@ -28,11 +28,14 @@ Copyright (c) 2021 Robert R. Puccinelli
 
 #define SYSTEM_CLOCK   4000000   // Change to match your choice of SYSCLK in Hz
 #define IC_TARGET      PMS132    // PMS150C, PMS132, PMS134
-#define PERIPH_I2C_M   1         // I2C Master. Disable: 0, Enable: 1
-#define PERIPH_PWM_11B 1         // 11B PWM.    Disable: 0, Enable: 1
-#define PERIPH_BUTTON  1         // Buttons.    Disable: 0, Enable: 1
-#define PERIPH_LCD     1         // LCD.        Disable: 0, Enable: 1
-#define PERIPH_EEPROM  1         // EEPROM.     Disable: 0, Enable: 1
+
+#define PERIPH_I2C_M   1         // I2C Master.    Disable: 0, Enable: 1
+#define PERIPH_PWM_11B 1         // 11B PWM.       Disable: 0, Enable: 1
+#define PERIPH_BUTTON  1         // Buttons.       Disable: 0, Enable: 1
+#define PERIPH_LCD     1         // LCD.           Disable: 0, Enable: 1
+#define PERIPH_EEPROM  1         // EEPROM.        Disable: 0, Enable: 1
+#define PERIPH_STEPPER 1         // Stepper motor. Disable: 0, Enable: 1
+#define PERIPH_TIMER8  1 
 
 //======================//
 // RESOURCE UTILIZATION //
@@ -41,12 +44,12 @@ Copyright (c) 2021 Robert R. Puccinelli
 // Use this area to track which resources are used and where
 //
 //    PA0    -             PB0    -           PC0    X
-//    PA1    X             PB1    -           PC1    X    
-//    PA2    X             PB2    BTN         PC2    X
+//    PA1    X             PB1    BTN         PC1    X    
+//    PA2    X             PB2    TM2         PC2    X
 //    PA3    STEP_D        PB3    BTN         PC3    X
 //    PA4    STEP_S        PB4    BTN         PC4    X
 //    PA5    -             PB5    PWM-11b     PC5    X
-//    PA6    I2C_SDA       PB6    -           PC6    X
+//    PA6    I2C_SDA       PB6    TM3         PC6    X
 //    PA7    I2C_SCL       PB7    -           PC7    X
 //
 //    TM16   -
@@ -70,6 +73,9 @@ Copyright (c) 2021 Robert R. Puccinelli
 //============================//
 
 
+#define ICE_ILRC_HZ 34700	// ILRC clock of ICE for code validation
+
+
 #ifidni IC_TARGET, PMS150C
     #define HAS_MULTIPLIER 0
     #define HAS_PWM        1
@@ -79,7 +85,7 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define HAS_12B_ADC    0
     #define HAS_OPA        0
     #define ILRC_HZ        59000    // Varies with voltage + temperature
-	#define INSTR_CYCLES   2         // 2T architecture - DO NOT CHANGE
+	#define INSTR_CYCLES   2        // 2T architecture - DO NOT CHANGE
 #endif
 
 
@@ -91,8 +97,8 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define HAS_ADC        1
     #define HAS_12B_ADC    1
     #define HAS_OPA        0
-    #define ILRC_HZ        53000    // Varies with voltage + temperature
-	#define INSTR_CYCLES   2         // 2T architecture - DO NOT CHANGE
+    #define ILRC_HZ        54000    // Varies with voltage + temperature
+	#define INSTR_CYCLES   2        // 2T architecture - DO NOT CHANGE
 #endif
 
 
@@ -105,7 +111,7 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define HAS_12B_ADC    1
     #define HAS_OPA        0
     #define ILRC_HZ        53000    // Varies with voltage + temperature
-	#define INSTR_CYCLES   2         // 2T architecture - DO NOT CHANGE
+	#define INSTR_CYCLES   2        // 2T architecture - DO NOT CHANGE
 #endif
 
 
@@ -230,8 +236,8 @@ Copyright (c) 2021 Robert R. Puccinelli
     
 	#define BTN_USE_PB    1        // Options: Disable bank: 0 / Enable bank: 1
     #define BTN_PB0       0        // Options: 0 / 1
-    #define BTN_PB1       0        // Options: 0 / 1
-    #define BTN_PB2       1        // Options: 0 / 1
+    #define BTN_PB1       1        // Options: 0 / 1
+    #define BTN_PB2       0        // Options: 0 / 1
     #define BTN_PB3       1        // Options: 0 / 1
     #define BTN_PB4       1        // Options: 0 / 1
     #define BTN_PB5       0        // Options: 0 / 1
@@ -465,6 +471,10 @@ Copyright (c) 2021 Robert R. Puccinelli
 #endif
 
 
+//==================//
+// EEPROM INTERFACE //
+//==================//
+
 #ifidni PERIPH_EEPROM, 1
     #define EEPROM_COMM_MODE    I2C       // 
     #define EEPROM_DRIVER       M24C01    //  
@@ -486,5 +496,113 @@ Copyright (c) 2021 Robert R. Puccinelli
     // DO NOT TOUCH -- END //
     /////////////////////////
 #endif
+
+
+//==========//
+// 8b TIMER //
+//==========//
+
+#ifidni PERIPH_TIMER8, 1
+	#define TIMER8_USE_TM2       1
+	#define TIMER8_USE_TM3       1
+	#define TIMER8_SOLVER_ENABLE 1
+
+	// TIMER 2
+	#define TIMER8_2_HZ     ICE_ILRC_HZ //ILRC_HZ, SYSTEM_CLOCK, other. ICE_ILRC_HZ for TESTING ONLY
+	#define TIMER8_2_6BIT   0           // 0: 8-bit PWM;           1: 6-bit PWM
+	#define TIMER8_2_INV    0           // 0: Out polarity normal; 1: Out polarity inverted
+
+	#define TIMER8_2_CTL    TM2C
+	#define TIMER8_2_CNT    TM2CT
+	#define TIMER8_2_SCL    TM2S
+	#define TIMER8_2_BND    TM2B
+
+	#define TIMER8_2_CLK    ILRC   // ILRC, SYSCLK, other 
+	#define TIMER8_2_OUT    PB2    // Ex: Disable, PB2, PA3, PB4
+	#define TIMER8_2_MODE   Period // Period, PWM
+
+
+	// TIMER 3
+	#define TIMER8_3_HZ     ICE_ILRC_HZ //ILRC_HZ, SYSTEM_CLOCK, other. ICE_ILRC_HZ for TESTING ONLY
+	#define TIMER8_3_6BIT   1           // 0: 8-bit PWM;           1: 6-bit PWM
+	#define TIMER8_3_INV    1           // 0: Out polarity normal; 1: Out polarity inverted
+
+	#define TIMER8_3_CTL    TM3C
+	#define TIMER8_3_CNT    TM3CT
+	#define TIMER8_3_SCL    TM3S
+	#define TIMER8_3_BND    TM3B
+
+	#define TIMER8_3_CLK    ILRC
+	#define TIMER8_3_OUT    PB6     //Ex: Disable, PB5, PB6, PB7
+	#define TIMER8_3_MODE   PWM     // Period, PWM
+
+
+    ///////////////////////////
+    // DO NOT TOUCH -- START //
+    ///////////////////////////
+
+	#if TIMER8_USE_TM2
+
+		#if TIMER8_2_6BIT
+			#define TIMER8_2_RES 0b10000000
+		#else
+			#define TIMER8_2_RES 0b00000000
+		#endif
+
+		#if TIMER8_2_INV
+			#define TIMER8_2_POL Inverse
+		#else
+			#define TIMER8_2_POL
+		#endif
+
+	#endif
+
+
+	#if TIMER8_USE_TM3
+
+		#if TIMER8_3_6BIT
+			#define TIMER8_3_RES 0b10000000
+		#else
+			#define TIMER8_3_RES 0b00000000
+		#endif
+
+		#if TIMER8_3_INV
+			#define TIMER8_3_POL Inverse
+		#else
+			#define TIMER8_3_POL
+		#endif
+
+	#endif
+
+	/////////////////////////
+    // DO NOT TOUCH -- END //
+    /////////////////////////
+#endif
+
+
+//===================//
+// STEPPER INTERFACE //
+//===================//
+
+#ifidni PERIPH_STEPPER, 1
+    #define EEPROM_COMM_MODE    I2C       // 
+    #define EEPROM_DRIVER       M24C01    //  
+    #define EEPROM_WRITE_CTL    NONE      // Pin on ~WC (ie PA.7)
+    #define EEPROM_PAGE_SIZE    16        // Page size in bytes
+    #define EEPROM_MEM_SIZE     128       // Memory size in bytes
+
+
+    ///////////////////////////
+    // DO NOT TOUCH -- START //
+    ///////////////////////////
+    #ifdifi PERIPH_PWM_11B, 1
+        .error PERIPH_STEPPER REQUIRES PERIPH_PWM_11B to be enabled! 
+    #endif
+
+    /////////////////////////
+    // DO NOT TOUCH -- END //
+    /////////////////////////
+#endif
+
 
 #endif // SYSTEM_SETTINGS_H
