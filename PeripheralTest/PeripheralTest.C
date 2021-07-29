@@ -7,7 +7,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 //#include 	"../pdk_button.h"
 //#include 	"../pdk_lcd.h"
 //#include	"../pdk_eeprom.h"
-#include	"../pdk_common.h"
+#include	"../pdk_math.h"
 
 void	FPPA0 (void)
 {
@@ -156,11 +156,35 @@ void	FPPA0 (void)
 	//=========================//
 	// GENERAL UTILITIES CHECK //
 	//=========================//
-
-
+	math_dividend = 255;
+	math_divisor = 1;
+	$ PA.7 OUT, HIGH;
 	byte_divide();
+	$ PA.7 LOW;
 
+	math_dividend = 65535;
+	math_divisor = 1;
+	$ PA.7 HIGH;
+	word_divide();
+	$ PA.7 LOW;
 
+	math_dividend = 16777215;
+	math_divisor = 1;
+	$ PA.7 HIGH;
+	eword_divide();
+	$ PA.7 LOW;
+
+	math_mult_a = 255;
+	math_mult_b = 255;
+	$ PA.7 HIGH;
+	byte_multiply();
+	$ PA.7 LOW;
+
+	math_mult_a = 65535;
+	math_mult_b = 65535;
+	$ PA.7 HIGH;
+	word_multiply();
+	$ PA.7 LOW;
 
 	while (1)
 	{
