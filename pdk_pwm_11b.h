@@ -1,14 +1,13 @@
-/* pdk_pwm_11b.h
+/* pdk_pwm_11b.c
    
-11-bit PWM declarations for ICs with 11-bit PWM functionality.
+11-bit PWM utilities for ICs with 11-bit PWM functionality.
 Specify IC and PWM in system_settings.h
-Currently, only one 11-bit PWM can be used. RAM/ROM saving meaure.
 
-ROM Consumed : 110B / 0x6E  -  WITHOUT SOLVER
-RAM Consumed : 14B  / 0x0E  -  WITHOUT SOLVER
+ROM Consumed : 281B / 0x119  -  Generators 1/2/3 - SOLVER
+RAM Consumed : 18B  / 0x12   -  Generators 1/2/3 - SOLVER
 
-ROM Consumed : 297B / 0x129  -  WITH SOLVER
-RAM Consumed :  33B / 0x12   -  WITH SOLVER
+ROM Consumed : 648B / 0x288  -  Generators 1/2/3 + SOLVER
+RAM Consumed :  39B / 0x27   -  Generators 1/2/3 + SOLVER
 
 
 DOCUMENTATION ERROR:
@@ -16,17 +15,19 @@ DOCUMENTATION ERROR:
 	During testing, the observed PWM was consistently 2x faster than the PWM predicted with the
 	equation in section 8.5.3 of the PMS132 manual. This was also observed with the demo code
 	in section 8.5.4, where the equation predicted 1.25 kHz, but the device ran at 2.5 kHz. To 
-	compensate for this unexpected event, the PWM_CLK is reduced by 2x in the autosolver function.
-	End users should be aware of this discrepancy before use.
-
+	compensate for this unexpected event, the clock_ratio is increased by 2x in the solver function.
 	
+
 NOTE: 
 
-	ICs with an 8x8 multiplier have the option to solve for register settings
-	that result in an output frequency closest to the target frequency. However,
-	in a worst-case scenario it can take ~2M + 2xPWM_Clk cycles to iterate through all options.
-	Worst-case is a very fast PWM clock and a very slow target PWM frequency, < slowest possible PWM.
-	2nd worst case is very fast PWM frequency (~PWM clock). ~2M cycles
+	16.7 MHz is currently the highest supported frequency due to the use of EWORDs.
+	DO NOT USE IHRC x 2 PWM CLOCK!
+
+	This version of the 11b PWM utilizes pdk_math utilities since they provide more stable
+	computation times and a 100x performance improvement at the expense of memory and slightly
+	inferior error rates. Error rate might be reduced by multiplying Clk x2 instead of clock
+	ratio. This would require DWORD division, which currently does not exist.
+		
 	
 	In the PMS132 datasheet frequency can be solved with the following equation:
 
@@ -35,8 +36,6 @@ NOTE:
 			Prescaler 	: [1, 4, 16, 64]
 			Scaler		: [0 : 31]
 			Counter		: [0 : 2046], in steps of 2
-
-	The fastest PWM is (PWM_Clk) and the slowest is (PWM_Clk / 4,192,256).
 
 
 This software is licensed under GPLv3 <http://www.gnu.org/licenses/>.
@@ -51,19 +50,21 @@ Copyright (c) 2021 Robert R. Puccinelli
 // VARIABLES //
 //===========//
 
-EXTERN BYTE	prescaler;		// 6-bit  [1, 4, 16, 64]
-EXTERN WORD	scalar;			// 5-bit  [0 : 31]
-EXTERN WORD	counter;		// 11-bit [0 : 2046] in steps of 2
-EXTERN WORD	duty;			// 11-bit [0 : 2047]
+EXTERN BYTE	pwm11_prescalar;		// 6-bit  [1, 4, 16, 64]
+EXTERN WORD	pwm11_scalar;			// 5-bit  [0 : 31]
+EXTERN WORD	pwm11_counter;		// 11-bit [0 : 2046] in steps of 2
+EXTERN WORD	pwm11_duty;			// 11-bit [0 : 2047]
+EXTERN BIT  pwm11_use_solver;
+
 
 //======================//
 // PWM SOLVER VARIABLES //
 //======================//
 
-#IF SOLVER_OPTION
+#IF PWM_SOLVER_ENABLE
 
-EXTERN DWORD	f_pwm_target;	// Hz
-EXTERN BIT		use_pwm_solver; // Flag to select PWM solver, if available
+EXTERN BYTE  &pwm11_duty_percent;
+EXTERN EWORD &pwm11_target_freq;	// Hz
 
 #ENDIF
 
@@ -72,8 +73,20 @@ EXTERN BIT		use_pwm_solver; // Flag to select PWM solver, if available
 // PROGRAM FUNCTIONS //
 //===================//
 
-void	PWM_11b_Initialize (void);
-void	PWM_11b_Set_Parameters(void);
-void	PWM_11b_Start (void);
-void	PWM_11b_Stop (void);
-void	PWM_11b_Release (void);
+void	PWM11_0_Initialize     (void);
+void	PWM11_0_Set_Parameters (void);
+void	PWM11_0_Start          (void);
+void	PWM11_0_Stop           (void);
+void	PWM11_0_Release        (void);
+
+void	PWM11_1_Initialize     (void);
+void	PWM11_1_Set_Parameters (void);
+void	PWM11_1_Start          (void);
+void	PWM11_1_Stop           (void);
+void	PWM11_1_Release        (void);
+
+void	PWM11_2_Initialize     (void);
+void	PWM11_2_Set_Parameters (void);
+void	PWM11_2_Start          (void);
+void	PWM11_2_Stop           (void);
+void	PWM11_2_Release        (void);

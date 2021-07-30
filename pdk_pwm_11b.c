@@ -2,13 +2,12 @@
    
 11-bit PWM utilities for ICs with 11-bit PWM functionality.
 Specify IC and PWM in system_settings.h
-Currently, only one 11-bit PWM can be used. RAM/ROM saving meaure.
 
-ROM Consumed : 110B / 0x6E  -  WITHOUT SOLVER
-RAM Consumed : 14B  / 0x0E  -  WITHOUT SOLVER
+ROM Consumed : 281B / 0x119  -  Generators 1/2/3 - SOLVER
+RAM Consumed : 18B  / 0x12   -  Generators 1/2/3 - SOLVER
 
-ROM Consumed : 297B / 0x129  -  WITH SOLVER
-RAM Consumed :  33B / 0x12   -  WITH SOLVER
+ROM Consumed : 648B / 0x288  -  Generators 1/2/3 + SOLVER
+RAM Consumed :  39B / 0x27   -  Generators 1/2/3 + SOLVER
 
 
 DOCUMENTATION ERROR:
@@ -16,17 +15,19 @@ DOCUMENTATION ERROR:
 	During testing, the observed PWM was consistently 2x faster than the PWM predicted with the
 	equation in section 8.5.3 of the PMS132 manual. This was also observed with the demo code
 	in section 8.5.4, where the equation predicted 1.25 kHz, but the device ran at 2.5 kHz. To 
-	compensate for this unexpected event, the PWM_CLK is increased by 2x in the autosolver function.
-	End users should be aware of this discrepancy before use.
+	compensate for this unexpected event, the clock_ratio is increased by 2x in the solver function.
 	
 
 NOTE: 
 
-	ICs with an 8x8 multiplier have the option to solve for register settings
-	that result in an output frequency closest to the target frequency. However,
-	in a worst-case scenario it can take ~2M + 2xPWM_Clk cycles to iterate through all options.
-	Worst-case is a very fast PWM clock and a very slow target PWM frequency, < slowest possible PWM.
-	2nd worst case is very fast PWM frequency (~PWM clock). ~2M cycles
+	16.7 MHz is currently the highest supported frequency due to the use of EWORDs.
+	DO NOT USE IHRC x 2 PWM CLOCK!
+
+	This version of the 11b PWM utilizes pdk_math utilities since they provide more stable
+	computation times and a 100x performance improvement at the expense of memory and slightly
+	inferior error rates. Error rate might be reduced by multiplying Clk x2 instead of clock
+	ratio. This would require DWORD division, which currently does not exist.
+		
 	
 	In the PMS132 datasheet frequency can be solved with the following equation:
 
@@ -36,60 +37,49 @@ NOTE:
 			Scaler		: [0 : 31]
 			Counter		: [0 : 2046], in steps of 2
 
-	The fastest PWM is (PWM_Clk) and the slowest is (2 x PWM_Clk / 4,192,256).
-
 	Autosolver Testing:
-	PWM CLK = SYSCLK = 4000000
+	PWM CLK = SYSCLK = 4000000 Hz
+	Time to solve    = 3 ms
 
 	Target  = 200000
 	Result  = 200000
 	Error   = 0.000%
-	Time	= 331 ms
 	
 	Target  = 20000
 	Result  = 20000
 	Error   = 0.000%
-	Time    = 329 ms
 
 	Target  = 17561
-	Result  = 17582.4
-	Error   = 0.122%
-	Time    = 260 ms	
+	Result  = 17621
+	Error   = 0.342%
 	
 	Target  = 14000
-	Result  = 14010.5
-	Error   = 0.075%
-	Time    = 241 ms
+	Result  = 14035
+	Error   = 0.251%
 	
 	Target  = 6500
-	Result  = 6504.07
+	Result  = 6504
 	Error   = 0.063%
-	Time    = 236 ms
 
 	Target  = 2000
 	Result  = 2000
 	Error   = 0.000%
-	Time    = 321 ms
 	
 	Target  = 1000
-	Result  = 999.87
+	Result  = 1000
 	Error   = 0.0125%
-	Time    = 494 ms
 
 	Target  = 100
 	Result  = 100
 	Error   = 0.000%
-	Time    = 518 ms
 
 	Target  = 10
-	Result  = 9.9996
+	Result  = 10
 	Error   = 0.004%
-	Time    = 3613 ms
 
-	Target  = 1
-	Result  = 2.101
-	Error   = 99.988%
-	Time    = 37160 ms
+	Target  = 1      // Out of range
+	Result  = 1.908
+	Error   = 90.98%
 
 
 This software is licensed under GPLv3 <http://www.gnu.org/licenses/>.
@@ -101,7 +91,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 */
 
 #include "system_settings.h"
-
+#include "pdk_math.h"
 
 // 11-bit PWM Required
 #IFNDEF HAS_11B_PWM
@@ -109,38 +99,31 @@ Copyright (c) 2021 Robert R. Puccinelli
 #ENDIF
 
 
-// Multiplier optional
-#IFNDEF HAS_MULTIPLIER
-	.echo NOTE: IC IC_TARGET does NOT have a multiplier. Cannot use PWM parameter solving function!
-#ENDIF
-
-
 //===========//
 // VARIABLES //
 //===========//
 
-// PWM_Frequency = PWM_Clk / [ Prescaler x (Scaler + 1) x (Counter + 1) ]
-BYTE		prescaler;		// 6-bit  [1, 4, 16, 64]
-WORD		scalar;			// 5-bit  [0 : 31]
-WORD		counter;		// 11-bit [0 : 2046] in steps of 2
-WORD		duty = 0xFFFF;	// 11-bit [0 : 2047], if 0xFFFF, duty is set to 50%
-BYTE		temp_byte;		// General purpose byte that is overwritten
-BYTE		pwm_flags = 0;
-BIT			pwm_module_initialized : pwm_flags.?;
+
+BYTE pwm11_flags     = 0;
+BYTE pwm11_prescalar = 0; // 6-bit  [1, 4, 16, 64]
+WORD pwm11_scalar    = 0; // 5-bit  [0 : 31]
+WORD pwm11_duty      = 0; // 11-bit [0 : 2047]
+WORD pwm11_counter   = 0; // 11-bit [0 : 2046] in steps of 2
+
+BIT  pwm11_pwm0_init  : pwm11_flags.?;
+BIT  pwm11_pwm1_init  : pwm11_flags.?;
+BIT  pwm11_pwm2_init  : pwm11_flags.?;
+BIT  pwm11_use_solver : pwm11_flags.?; // Flag to select PWM solver, if available
 
 
-// Variables required for solving PWM parameters
-#IF SOLVER_OPTION
+#IF PWM_SOLVER_ENABLE
 
-BIT				use_pwm_solver : pwm_flags.?; // Flag to select PWM solver, if available
-DWORD			f_pwm_target;	// Hz
-DWORD			f_pwm_clk;		// Hz
-DWORD			clock_ratio;	// PWM_Clk / PWM_Target, pulses per second
-BYTE 			pre_count;
-
-WORD			product;
-WORD			net;
-BYTE			tolerance;
+	STATIC EWORD  pwm11_clock_ratio;	// PWM_Clk / PWM_Target, pulses per second
+	STATIC EWORD  pwm11_clk_freq;		// Hz
+	STATIC BYTE  &pwm11_tolerance    = pwm11_clk_freq$0;
+	STATIC BYTE  &pwm11_scalar_temp  = pwm11_clk_freq$1;
+	BYTE         &pwm11_duty_percent = pwm11_duty$0;
+	EWORD        &pwm11_target_freq  = pwm11_clock_ratio$0;	// Hz
 
 #ENDIF
 
@@ -149,181 +132,281 @@ BYTE			tolerance;
 // STATIC FUNCTIONS //
 //=================-//
 
-#IF SOLVER_OPTION
+#IF PWM_SOLVER_ENABLE
 
 static void Solve_PWM_Parameters(void)
 {
-	// Fastest PWM is PWM_Clk;
-	// Slowest PWM is PWM_Clk / 4,192,256
-	// F_Target above or below leads to worst case performance
-	f_pwm_clk =  PWM_CLOCK_HZ << 1;
+	if (!pwm11_target_freq) pwm11_target_freq = (pwm11_clk_freq >> 4);
 
-	if (!f_pwm_target) f_pwm_target=1;
+	// Find ratio between clk freq and desired pwm freq
+	math_dividend = pwm11_clk_freq;
+	math_divisor  = pwm11_target_freq;
+	eword_divide();
+	pwm11_clock_ratio = math_quotient;
 
-	// A poor man's division.
-	// Find how many PWM_targets fit into PWM_Clk
-	// Stop once division has reached or passed 0
-	// Takes longer for slower PWMs, up to PWM_Clk cycles
-	clock_ratio = 0;
-	do
-	{
-		clock_ratio++;
-		f_pwm_clk -= f_pwm_target;
-	} while(  !flag.1 );
 
-	clock_ratio--;
+	// Documentation error correction
+	pwm11_clock_ratio <<= 1;
+
 
 	// Boost low freqs into solvable range
-	// Slowest PWM possible is PWM_clk / 4,192,256
-	// Going below this results in worst-case solver
-	pre_count = 0;
-	while( (clock_ratio > 65504) && (pre_count < 6) )
+	pwm11_prescalar = 0;
+	while( (pwm11_clock_ratio > 65504) && (pwm11_prescalar < 6) )
 	{ 
-		clock_ratio = clock_ratio >> 2;
-		pre_count += 2;
+		pwm11_clock_ratio >>= 2;
+		pwm11_prescalar += 2;
 	}
 
 
 	// Convert shifts into prescaler value
-	if 		(pre_count == 0)	{prescaler = 1;}	// 0b00
-	else if	(pre_count == 2)	{prescaler = 4;}	// 0b01
-	else if (pre_count == 4)	{prescaler = 16;}	// 0b10
-	else if (pre_count == 6)	{prescaler = 64;}	// 0b11
+	if 		(pwm11_prescalar == 0)	{pwm11_prescalar = 1;}	// 0b00
+	else if	(pwm11_prescalar == 2)	{pwm11_prescalar = 4;}	// 0b01
+	else if (pwm11_prescalar == 4)	{pwm11_prescalar = 16;}	// 0b10
+	else if (pwm11_prescalar == 6)	{pwm11_prescalar = 64;}	// 0b11
 
 
-	// Solver setup
-	scalar = 32;	// 1 above max possible value in PWM formula
-	counter = 2049; // 2 above max possible value
-	product = 0;	// Scaler x Counter
-	net = 0;		// f_clk / (f_target * Prescaler) - (Scaler x Counter)
-	tolerance = 0;	// Can't solve for prime numbers, etc. Slowly increase tolerance.
-
-
-	// Find the closest combination of scalar and count registers through brute force.
-	// High SYSCLK recommended. Can take ~2M instructions to solve in the worst case.
-	do						// Tolerance
+	// Scan through scalar values to find optimal solution
+	pwm11_scalar_temp = 1; 
+	pwm11_tolerance = 32;
+	do
 	{
-	counter = 2049;	// Restore counter for next parameter scan
+		math_dividend = pwm11_clock_ratio;
+		math_divisor  = pwm11_scalar_temp;
+		word_divide();
 
-		do					// Scalar
+		// To update, counter must be odd, less than 2^11, and tolerance must improve
+		if ((math_remainder < pwm11_tolerance) && math_quotient.0 && (math_quotient < 2048))
 		{
-			counter -=2;	// Counter can only be an odd number in PWM formula
-			scalar = 33;	// Restore scalar for next parameter scan	
+			pwm11_tolerance = math_remainder;
+			pwm11_counter = math_quotient;
+			pwm11_scalar = pwm11_scalar_temp;
+		}
 
-			do			// Counter
-			{
-				scalar--;
-				MULOP = scalar; // Load scalar into the multiplier
-				A = counter$0;					// Multiply lower byte of counter with scalar 
-				mul;
-				product$0 = A;					// Store the product
-				product$1 = MULRH;	
-				A = counter$1;					// Multiply upper byte of counter with scalar
-				mul;
-				product$1 += A;					// Add product to stored high byte, MULRH is always 0 here
-				net = clock_ratio - product;	// How close to zero?
+		pwm11_scalar_temp++;
 
+	} while (pwm11_scalar_temp < 33);
 
-				// Compiler can only handle simple comparisons.
-				if (flag.1) { net = -net; }
-				temp_byte = tolerance + 1;
-
-
-			// Break if net is within tolerance or counter finished scanning
-			} while(  (net > temp_byte) && (scalar > 1)  );
-			
-
-		// Break if net is within tolerance or scalar finished scanning
-		} while( (net >= temp_byte) && (counter > 1) );
-			
-		tolerance++;	// Increment tolerance for next parameter scan
-
-	// Break if net	is within tolerance or tolerance exceeds limit
-	} while ( (net > temp_byte) && (tolerance < 65) );	// Max tolerance: 64 -> (max scalar x space between count values)
-
-	
-	// If scanning failed, use the slowest PWM
-	// Consider using a slower clock if you need a very slow PWM
-	if (tolerance > 65 && net) 
+	if ((pwm11_counter == 0) || (pwm11_scalar == 0))
 	{
-		scalar = 32;
-		counter = 2047;
+		pwm11_counter = 2047;
+		pwm11_scalar = 32;
 	}
 
-
-	scalar--;	// Decrement scalar to compensate for +1 in formula
-	counter--;	// Decrement scalar to compensate for +1 in formula
-
+	pwm11_scalar--;	// Decrement scalar to compensate for +1 in formula
+	pwm11_counter--;	// Decrement scalar to compensate for +1 in formula
 }
 
-#ENDIF //SOLVER_OPTION
+
+static void Solve_Duty(void)
+{
+	if (pwm11_duty_percent > 100) pwm11_duty_percent = 50;
+
+	math_mult_a = pwm11_duty_percent;
+	math_mult_b = pwm11_counter + 1;
+	word_multiply();
+
+	math_dividend = math_product;
+	math_divisor = 100;
+	eword_divide();
+
+	pwm11_duty = math_quotient;
+	math_remainder -= 50;
+
+	if (math_remainder > 50) pwm11_duty.0 = 1;
+	else pwm11_duty.0 = 0;
+}
+#ENDIF //PWM_SOLVER_ENABLE
+
+
+static void Convert_Prescalar(void)
+{
+	if 		(pwm11_prescalar == 4) 	pwm11_prescalar = 0b0100000;
+	else if (pwm11_prescalar == 16) pwm11_prescalar = 0b1000000;
+	else if (pwm11_prescalar == 64)	pwm11_prescalar = 0b1100000;
+	else							pwm11_prescalar = 0b0000000;
+}
 
 
 //===================//
 // PROGRAM FUNCTIONS //
 //===================//
 
-void PWM_11b_Initialize (void)
-{
-	if (! pwm_module_initialized)
-	{
-       $ PWM_CTL	PWM_OUTPUT, PWM_CLOCK;
-	   pwm_module_initialized = 1;
-	}
+
+// PWM 0
+
+void PWM11_0_Stop (void)
+{ 
+	if (pwm11_pwm0_init) $ PWM_0_CTL PWM_0_POL, PWM_0_OUTPUT, PWM_0_CLOCK; 
 }
 
-void PWM_11b_Set_Parameters(void)
+
+void PWM11_0_Start (void)
+{ 
+	if (pwm11_pwm0_init) $ PWM_0_CTL PWM_ENABLE, PWM_RESET, PWM_0_POL, PWM_0_OUTPUT, PWM_0_CLOCK; 
+}
+
+
+void PWM11_0_Set_Parameters(void)
 {
-	if (pwm_module_initialized)
+	if (pwm11_pwm0_init)
 	{
-		#IF SOLVER_OPTION
-		if (use_pwm_solver)	{Solve_PWM_Parameters();}	
+		#IF PWM_SOLVER_ENABLE
+			if (pwm11_use_solver)
+			{
+				pwm11_clk_freq = PWM_0_CLK_HZ;
+				Solve_PWM_Parameters();	
+				Solve_Duty();
+			}
 		#ENDIF
 
-		if 		(prescaler < 4) 	temp_byte = 0b00;
-		else if (prescaler < 16) 	temp_byte = 0b01;
-		else if (prescaler < 64)	temp_byte = 0b10;
-		else						temp_byte = 0b11;
+		Convert_Prescalar();
 
-		if (duty == 0xFFFF) duty = counter >> 1;
+		PWM_0_SCALAR = pwm11_prescalar | pwm11_scalar | PWM_0_INT;
 
-		duty <<= 5;
-		PWM_DUTY_L 	= duty$0;
-		PWM_DUTY_H 	= duty$1;
+		pwm11_duty <<= 5;
+		PWM_0_DUTY_L = pwm11_duty$0;
+		PWM_0_DUTY_H = pwm11_duty$1;
 
-		counter <<= 5;
-		PWM_COUNT_L = counter$0;
-		PWM_COUNT_H	= counter$1;
-
-		PWM_SCALAR	= (temp_byte << 5) | scalar;
+		pwm11_counter <<= 5;
+		PWM_0_COUNT_L = pwm11_counter$0;
+		PWM_0_COUNT_H = pwm11_counter$1;
 	}
 }
 
 
-void PWM_11b_Start (void)
+void PWM11_0_Initialize (void)
 {
-	if (pwm_module_initialized)
+	if (!pwm11_pwm0_init && PWM_USE_G0)
 	{
-		PWM_CTL = PWM_CTL | PWM_RST | PWM_ENABLE;
+		PWM11_0_Stop();
+		pwm11_pwm0_init = 1;
 	}
 }
 
 
-void PWM_11b_Stop (void)
+void PWM11_0_Release (void)
 {
-	if (pwm_module_initialized)
+	if (pwm11_pwm0_init)
 	{
-		PWM_CTL = PWM_CTL & ~PWM_ENABLE;
+		PWM11_0_Stop();
+		pwm11_pwm0_init = 0;
 	}
 }
 
 
-void PWM_11b_Release (void)
+
+// PWM 1
+
+void PWM11_1_Stop (void)
+{ if (pwm11_pwm1_init) $ PWM_1_CTL PWM_1_POL, PWM_1_OUTPUT, PWM_1_CLOCK; }
+
+
+void PWM11_1_Start (void)
+{ if (pwm11_pwm1_init) $ PWM_1_CTL PWM_ENABLE, PWM_RESET, PWM_1_POL, PWM_1_OUTPUT, PWM_1_CLOCK; }
+
+
+void PWM11_1_Set_Parameters(void)
 {
-	if (pwm_module_initialized)
+	if (pwm11_pwm1_init)
 	{
-		PWM_11b_Stop();
-		PWM_CTL = PWM_DISABLE;
-		pwm_module_initialized = 0;
+		#IF PWM_SOLVER_ENABLE
+			if (pwm11_use_solver)
+			{
+				pwm11_clk_freq = PWM_1_CLK_HZ;
+				Solve_PWM_Parameters();	
+				Solve_Duty();
+			}
+		#ENDIF
+
+		Convert_Prescalar();
+
+		PWM_1_SCALAR = pwm11_prescalar | pwm11_scalar | PWM_1_INT;
+
+		pwm11_duty <<= 5;
+		PWM_1_DUTY_L = pwm11_duty$0;
+		PWM_1_DUTY_H = pwm11_duty$1;
+
+		pwm11_counter <<= 5;
+		PWM_1_COUNT_L = pwm11_counter$0;
+		PWM_1_COUNT_H = pwm11_counter$1;
+	}
+}
+
+
+void PWM11_1_Initialize (void)
+{
+	if (!pwm11_pwm1_init && PWM_USE_G1)
+	{
+		PWM11_1_Stop();
+		pwm11_pwm1_init = 1;
+	}
+}
+
+
+void PWM11_1_Release (void)
+{
+	if (pwm11_pwm1_init)
+	{
+		PWM11_1_Stop();
+		pwm11_pwm1_init = 0;
+	}
+}
+
+
+
+// PWM 2
+
+void PWM11_2_Stop (void)
+{ if (pwm11_pwm2_init) $ PWM_2_CTL PWM_2_POL, PWM_2_OUTPUT, PWM_2_CLOCK; }
+
+
+void PWM11_2_Start (void)
+{ if (pwm11_pwm2_init) $ PWM_2_CTL PWM_ENABLE, PWM_RESET, PWM_2_POL, PWM_2_OUTPUT, PWM_2_CLOCK; }
+
+
+void PWM11_2_Set_Parameters(void)
+{
+	if (pwm11_pwm2_init)
+	{
+		#IF PWM_SOLVER_ENABLE
+			if (pwm11_use_solver)
+			{
+				pwm11_clk_freq = PWM_2_CLK_HZ;
+				Solve_PWM_Parameters();	
+				Solve_Duty();
+			}
+		#ENDIF
+
+		Convert_Prescalar();
+
+		PWM_2_SCALAR = pwm11_prescalar | pwm11_scalar | PWM_2_INT;
+
+		pwm11_duty <<= 5;
+		PWM_2_DUTY_L = pwm11_duty$0;
+		PWM_2_DUTY_H = pwm11_duty$1;
+
+		pwm11_counter <<= 5;
+		PWM_2_COUNT_L = pwm11_counter$0;
+		PWM_2_COUNT_H = pwm11_counter$1;
+	}
+}
+
+
+void PWM11_2_Initialize (void)
+{
+	if (!pwm11_pwm2_init && PWM_USE_G2)
+	{
+		PWM11_2_Stop();
+		pwm11_pwm2_init = 1;
+	}
+}
+
+
+void PWM11_2_Release (void)
+{
+	if (pwm11_pwm2_init)
+	{
+		PWM11_2_Stop();
+		pwm11_pwm1_init = 0;
 	}
 }

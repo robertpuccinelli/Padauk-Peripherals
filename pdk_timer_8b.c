@@ -43,6 +43,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 // VARIABLES //
 //===========//
 
+
 BYTE timer8_flags     = 0;
 BYTE timer8_prescalar = 0; // 6-bit  [1, 4, 16, 64]
 BYTE timer8_scalar    = 0; // 5-bit  [0 : 31]
@@ -52,6 +53,7 @@ BIT  timer8_tm2_init   : timer8_flags.?;
 BIT  timer8_tm3_init   : timer8_flags.?;
 BIT  timer8_use_solver : timer8_flags.?; // Flag to select solver, if available
 BIT  timer8_use_6b_pwm : timer8_flags.?;
+
 
 #IF TIMER8_SOLVER_ENABLE
 
@@ -157,10 +159,10 @@ static void Timer8_Solve_Period(void)
 
 
 	// Convert shifts into prescalar value
-	if 		(timer8_prescalar == 0)	{timer8_prescalar = 1;}	// 0b00
-	else if	(timer8_prescalar == 2)	{timer8_prescalar = 4;}	// 0b01
-	else if (timer8_prescalar == 4)	{timer8_prescalar = 16;}	// 0b10
-	else if (timer8_prescalar == 6)	{timer8_prescalar = 64;}	// 0b11
+	if 		(timer8_prescalar == 0)	{timer8_prescalar = 1;}  // 0b00
+	else if	(timer8_prescalar == 2)	{timer8_prescalar = 4;}  // 0b01
+	else if (timer8_prescalar == 4)	{timer8_prescalar = 16;} // 0b10
+	else if (timer8_prescalar == 6)	{timer8_prescalar = 64;} // 0b11
 
 
 	// Find the closest combination of scalar and count registers through brute force.

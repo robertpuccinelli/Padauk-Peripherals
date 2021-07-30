@@ -3,7 +3,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 */
 #include	"../system_settings.h"
 //#include	"../pdk_math.h"
-//#include "../pdk_timer_8b.h"
+#include "../pdk_timer_8b.h"
 //#include	"../pdk_i2c.h"
 //#include	"../pdk_pwm_11b.h"
 //#include 	"../pdk_button.h"
@@ -64,7 +64,7 @@ void	FPPA0 (void)
 	// Period solver test
 
 	Timer2_Initialize();
-	timer8_target_freq = 200; // 5ms
+	timer8_target_freq = 14000; // 5ms
 	timer8_use_solver  = 1;
 	$ PA.7 OUT, HIGH;
 	Timer2_Set_Parameters();
@@ -130,28 +130,50 @@ void	FPPA0 (void)
 	// 11b PWM FEATURE CHECK //
 	//=======================//
 
+
 /*
-	
 // 	USE WITH NO AUTOSOLVER
-	prescaler = 1;			// 6-bit  [1, 4, 16, 64]
-	scalar = 0;				// 5-bit  [0 : 31]
-	counter = 100;			// 11-bit [0 : 2046] in steps of 2
-	duty = 60;				// 11-bit [0 : 2047]
+	pwm11_prescalar = 1;			// 6-bit  [1, 4, 16, 64]
+	pwm11_scalar = 10;				// 5-bit  [0 : 31]
+	pwm11_counter = 100;			// 11-bit [0 : 2046] in steps of 2
+	pwm11_duty = 60;				// 11-bit [0 : 2047]
+
+	PWM11_0_Initialize();
+	$ PA.5 OUT, HIGH
+ 	PWM11_0_Set_Parameters();
+	$ PA.5 LOW;
+ 	PWM11_0_Start();
+	.delay 800000;
+ 	PWM11_0_Stop();
+ 	PWM11_0_Release();
 
 //	USE WITH AUTOSOLVER
-	f_pwm_target = 14000;	// Desired PWM frequency, pulses per second
-	use_pwm_solver = 1; 	// Flag to select PWM solver, if available
+	pwm11_target_freq  = 1;	// Desired PWM frequency, pulses per second
+	pwm11_duty_percent = 50;
+	pwm11_use_solver   = 1; 	// Flag to select PWM solver, if available
 
- 	PWM_11b_Initialize();
-	$ PA.4 OUT, HIGH
- 	PWM_11b_Set_Parameters();
-	$ PA.4 LOW;
- 	PWM_11b_Start();
-	.delay 4000000;
- 	PWM_11b_Stop ();
- 	PWM_11b_Release ();
+ 	PWM11_1_Initialize();
+	$ PA.5 OUT, HIGH
+ 	PWM11_1_Set_Parameters();
+	$ PA.5 LOW;
+ 	PWM11_1_Start();
+	.delay 800000;
+ 	PWM11_1_Stop();
+ 	PWM11_1_Release();
+
+	pwm11_target_freq  = 10;	// Desired PWM frequency, pulses per second
+	pwm11_duty_percent = 10;
+	pwm11_use_solver   = 1; 	// Flag to select PWM solver, if available
+
+ 	PWM11_2_Initialize();
+	$ PA.5 OUT, HIGH
+ 	PWM11_2_Set_Parameters();
+	$ PA.5 LOW;
+ 	PWM11_2_Start();
+	.delay 800000;
+ 	PWM11_2_Stop();
+ 	PWM11_2_Release();
 */
-
 
 	//======================//
 	// BUTTON FEATURE CHECK //
@@ -254,7 +276,6 @@ void	FPPA0 (void)
 void	Interrupt (void)
 {
 	pushaf;
-
 
 	if (Intrq.TM2)
 	{
