@@ -2,11 +2,19 @@
    
 8-bit timer utilities.
 
-ROM Consumed : 110B / 0x6E  -  WITHOUT SOLVER
-RAM Consumed : 14B  / 0x0E  -  WITHOUT SOLVER
 
-ROM Consumed : 297B / 0x129  -  WITH SOLVER
-RAM Consumed :  33B / 0x12   -  WITH SOLVER
+ROM Consumed : 132B / 0x84  -  WITHOUT SOLVER & TM2/TM3
+RAM Consumed : 12B  / 0x0C  -  WITHOUT SOLVER & TM2/TM3
+
+ROM Consumed : 595B / 0x253 -  WITH SOLVER & TM2/TM3
+RAM Consumed :  35B / 0x23  -  WITH SOLVER & TM2/TM3
+
+
+NOTE:
+	Approximately 1/2 of the solver memory is due to the math library.
+
+	Period solver takes ~2.5ms to complete. Nearly all solutions <10ms.
+	PWM solver takes ~500us to complete.
 
 	
 DOCUMENTATION ERROR:
@@ -14,8 +22,11 @@ DOCUMENTATION ERROR:
 	The PMS132 datasheet claims that the bound register for a 8b timer
 	can range from 0 - 255. That was not observed to be the case for
 	a timer in period mode. When bound = 0 in period mode, the output
-	will not change states.
+	will not change states. PWM mode was not checked. To offset this
+	discovery, autosolver iterates through bound instead of scalar.
+	This makes it more likely that bound will not be 0.
 
+	
 This software is licensed under GPLv3 <http://www.gnu.org/licenses/>.
 Any modifications or distributions have to be licensed under GPLv3.
 No warranty of any kind and copyright holders cannot be held liable.
@@ -32,6 +43,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 // VARIABLES //
 //===========//
 
+
 BYTE timer8_flags     = 0;
 BYTE timer8_prescalar = 0; // 6-bit  [1, 4, 16, 64]
 BYTE timer8_scalar    = 0; // 5-bit  [0 : 31]
@@ -39,10 +51,9 @@ BYTE timer8_bound     = 0; // 8-bit bound register
 
 BIT  timer8_tm2_init   : timer8_flags.?;
 BIT  timer8_tm3_init   : timer8_flags.?;
-BIT  timer8_tm2_active : timer8_flags.?;
-BIT  timer8_tm3_active : timer8_flags.?;
 BIT  timer8_use_solver : timer8_flags.?; // Flag to select solver, if available
 BIT  timer8_use_6b_pwm : timer8_flags.?;
+
 
 #IF TIMER8_SOLVER_ENABLE
 
@@ -148,10 +159,10 @@ static void Timer8_Solve_Period(void)
 
 
 	// Convert shifts into prescalar value
-	if 		(timer8_prescalar == 0)	{timer8_prescalar = 1;}	// 0b00
-	else if	(timer8_prescalar == 2)	{timer8_prescalar = 4;}	// 0b01
-	else if (timer8_prescalar == 4)	{timer8_prescalar = 16;}	// 0b10
-	else if (timer8_prescalar == 6)	{timer8_prescalar = 64;}	// 0b11
+	if 		(timer8_prescalar == 0)	{timer8_prescalar = 1;}  // 0b00
+	else if	(timer8_prescalar == 2)	{timer8_prescalar = 4;}  // 0b01
+	else if (timer8_prescalar == 4)	{timer8_prescalar = 16;} // 0b10
+	else if (timer8_prescalar == 6)	{timer8_prescalar = 64;} // 0b11
 
 
 	// Find the closest combination of scalar and count registers through brute force.
@@ -206,18 +217,20 @@ void Timer2_Set_Parameters(void)
 {
 	if (timer8_tm2_init)
 	{
-		if (timer8_use_solver) 
-		{
-			timer8_pwm_clk =  TIMER8_2_HZ;
-			#IFIDNI TIMER8_2_MODE, PWM
-				if (TIMER8_2_6BIT) timer8_use_6b_pwm = 1;
-				else timer8_use_6b_pwm = 0;
-				Timer8_Solve_PWM();
-				Timer8_Solve_Duty();
-			#ELSE
-				Timer8_Solve_Period();
-			#ENDIF	
-		}
+		#IF TIMER8_SOLVER_ENABLE
+			if (timer8_use_solver) 
+			{
+				timer8_pwm_clk =  TIMER8_2_HZ;
+				#IFIDNI TIMER8_2_MODE, PWM
+					if (TIMER8_2_6BIT) timer8_use_6b_pwm = 1;
+					else timer8_use_6b_pwm = 0;
+					Timer8_Solve_PWM();
+					Timer8_Solve_Duty();
+				#ELSE
+					Timer8_Solve_Period();
+				#ENDIF	
+			}
+		#ENDIF
 
 		TIMER8_2_BND = timer8_bound;
 
@@ -288,18 +301,20 @@ void Timer3_Set_Parameters(void)
 {
 	if (timer8_tm3_init)
 	{
-		if (timer8_use_solver) 
-		{
-			timer8_pwm_clk =  TIMER8_3_HZ;
-			#IFIDNI TIMER8_3_MODE, PWM
-				if (TIMER8_3_6BIT) timer8_use_6b_pwm = 1;
-				else timer8_use_6b_pwm = 0;
-				Timer8_Solve_PWM();
-				Timer8_Solve_Duty();
-			#ELSE
-				Timer8_Solve_Period();
-			#ENDIF	
-		}
+		#IF TIMER8_SOLVER_ENABLE
+			if (timer8_use_solver) 
+			{
+				timer8_pwm_clk =  TIMER8_3_HZ;
+				#IFIDNI TIMER8_3_MODE, PWM
+					if (TIMER8_3_6BIT) timer8_use_6b_pwm = 1;
+					else timer8_use_6b_pwm = 0;
+					Timer8_Solve_PWM();
+					Timer8_Solve_Duty();
+				#ELSE
+					Timer8_Solve_Period();
+				#ENDIF	
+			}
+		#ENDIF
 
 		TIMER8_3_BND = timer8_bound;
 

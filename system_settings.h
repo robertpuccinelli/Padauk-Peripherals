@@ -46,18 +46,18 @@ Copyright (c) 2021 Robert R. Puccinelli
 //    PA0    -             PB0    -           PC0    X
 //    PA1    X             PB1    BTN         PC1    X    
 //    PA2    X             PB2    TM2         PC2    X
-//    PA3    STEP_D        PB3    BTN         PC3    X
-//    PA4    STEP_S        PB4    BTN         PC4    X
-//    PA5    -             PB5    PWM-11b     PC5    X
+//    PA3    STEP_D        PB3    PWMG2       PC3    X
+//    PA4    STEP_S        PB4    PWMG0       PC4    X
+//    PA5    -             PB5    -           PC5    X
 //    PA6    I2C_SDA       PB6    TM3         PC6    X
-//    PA7    I2C_SCL       PB7    -           PC7    X
+//    PA7    I2C_SCL       PB7    BTN         PC7    X
 //
 //    TM16   -
 //    TM2    BTN
 //    TM3    -
 //
-//    PWMG0  STEP_S
-//    PWMG1  -
+//    PWMG0  -
+//    PWMG1  STEP_S
 //    PWMG2  -
 //
 //    ADC    -
@@ -99,6 +99,15 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define HAS_OPA        0
     #define ILRC_HZ        54000    // Varies with voltage + temperature
 	#define INSTR_CYCLES   2        // 2T architecture - DO NOT CHANGE
+
+	#define INTR_TM3  7
+	#define INTR_TM2  6
+	#define INTR_PWM  5
+	#define INTR_GPC  4
+	#define INTR_ADC  3
+	#define INTR_T16  2
+	#define INTR_EXT1 1
+	#define INTR_EXT0 0
 #endif
 
 
@@ -161,42 +170,6 @@ Copyright (c) 2021 Robert R. Puccinelli
 #endif
 
 
-//=========//
-// 11b PWM //
-//=========//
-#ifidni PERIPH_PWM_11B, 1
-    #define PWM_CLOCK_HZ    SYSTEM_CLOCK // Or IHRC / IHRC x2 in Hz
-    #define PWM_CTL         PWMG0C       // PWMG0C, 1, 2
-    #define PWM_SCALAR      PWMG0S
-    #define PWM_COUNT_H     PWMG0CUBH
-    #define PWM_COUNT_L     PWMG0CUBL
-    #define PWM_DUTY_H      PWMG0DTH
-    #define PWM_DUTY_L      PWMG0DTL
-    #define PWM_RST         (1 << 4)
-    #define PWM_ENABLE      (1 << 7)
-    #define PWM_DISABLE     0
-
-    #define PWM_CLOCK       SYSCLK       // SYSCLK, IHRC, IHRC*2
-    #define PWM_OUTPUT      PB5          // Disable, PB5, PA0, PB4
-    #define PWM_LOAD_SOLVER 1            // Compile PWM solver, if supported.  
-                                         // CHECK HEADER FOR RESOURCE USAGE!!
-
-    ///////////////////////////
-    // DO NOT TOUCH -- START //
-    ///////////////////////////
-
-    #if HAS_MULTIPLIER
-        #define SOLVER_OPTION PWM_LOAD_SOLVER
-    #else
-        #define SOLVER_OPTION 0
-    #endif
-
-    /////////////////////////
-    // DO NOT TOUCH -- END //
-    /////////////////////////
-#endif
-
-
 //==============//
 // BUTTON INPUT //
 //==============//
@@ -238,11 +211,11 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define BTN_PB0       0        // Options: 0 / 1
     #define BTN_PB1       1        // Options: 0 / 1
     #define BTN_PB2       0        // Options: 0 / 1
-    #define BTN_PB3       1        // Options: 0 / 1
-    #define BTN_PB4       1        // Options: 0 / 1
+    #define BTN_PB3       0        // Options: 0 / 1
+    #define BTN_PB4       0        // Options: 0 / 1
     #define BTN_PB5       0        // Options: 0 / 1
     #define BTN_PB6       0        // Options: 0 / 1
-    #define BTN_PB7       0        // Options: 0 / 1
+    #define BTN_PB7       1        // Options: 0 / 1
 
     #define BTN_USE_PC    0        // Options: Disable bank: 0 / Enable bank: 1
     #define BTN_PC0       0        // Options: 0 / 1
@@ -503,81 +476,189 @@ Copyright (c) 2021 Robert R. Puccinelli
 //==========//
 
 #ifidni PERIPH_TIMER8, 1
+
 	#define TIMER8_USE_TM2       1
 	#define TIMER8_USE_TM3       1
-	#define TIMER8_SOLVER_ENABLE 1
+	#define TIMER8_SOLVER_ENABLE 1  // CHECK HEADER FOR RESOURCE USAGE!
+
 
 	// TIMER 2
-	#define TIMER8_2_HZ     ICE_ILRC_HZ //ILRC_HZ, SYSTEM_CLOCK, other. ICE_ILRC_HZ for TESTING ONLY
-	#define TIMER8_2_6BIT   0           // 0: 8-bit PWM;           1: 6-bit PWM
-	#define TIMER8_2_INV    0           // 0: Out polarity normal; 1: Out polarity inverted
-
-	#define TIMER8_2_CTL    TM2C
-	#define TIMER8_2_CNT    TM2CT
-	#define TIMER8_2_SCL    TM2S
-	#define TIMER8_2_BND    TM2B
-
-	#define TIMER8_2_CLK    ILRC   // ILRC, SYSCLK, other 
-	#define TIMER8_2_OUT    PB2    // Ex: Disable, PB2, PA3, PB4
-	#define TIMER8_2_MODE   Period // Period, PWM
+	#define TIMER8_2_CLK    ILRC    // ILRC, SYSCLK, other 
+	#define TIMER8_2_HZ     ILRC_HZ //ILRC_HZ, SYSTEM_CLOCK, other. ICE_ILRC_HZ for TESTING ONLY
+	#define TIMER8_2_MODE   Period  // Period, PWM
+	#define TIMER8_2_OUT    PB2     // Ex: Disable, PB2, PA3, PB4
+	#define TIMER8_2_6BIT   0       // 0: 8-bit PWM;           1: 6-bit PWM
+	#define TIMER8_2_INV    0       // 0: Out polarity normal; 1: Out polarity inverted
 
 
 	// TIMER 3
-	#define TIMER8_3_HZ     ICE_ILRC_HZ //ILRC_HZ, SYSTEM_CLOCK, other. ICE_ILRC_HZ for TESTING ONLY
-	#define TIMER8_3_6BIT   1           // 0: 8-bit PWM;           1: 6-bit PWM
-	#define TIMER8_3_INV    1           // 0: Out polarity normal; 1: Out polarity inverted
-
-	#define TIMER8_3_CTL    TM3C
-	#define TIMER8_3_CNT    TM3CT
-	#define TIMER8_3_SCL    TM3S
-	#define TIMER8_3_BND    TM3B
-
 	#define TIMER8_3_CLK    ILRC
-	#define TIMER8_3_OUT    PB6     //Ex: Disable, PB5, PB6, PB7
-	#define TIMER8_3_MODE   PWM     // Period, PWM
+	#define TIMER8_3_HZ     ICE_ILRC_HZ
+	#define TIMER8_3_MODE   PWM
+	#define TIMER8_3_OUT    PB6
+	#define TIMER8_3_6BIT   1
+	#define TIMER8_3_INV    1
 
 
     ///////////////////////////
     // DO NOT TOUCH -- START //
     ///////////////////////////
 
-	#if TIMER8_USE_TM2
+	#define TIMER8_2_CTL    TM2C
+	#define TIMER8_2_CNT    TM2CT
+	#define TIMER8_2_SCL    TM2S
+	#define TIMER8_2_BND    TM2B
 
-		#if TIMER8_2_6BIT
-			#define TIMER8_2_RES 0b10000000
-		#else
-			#define TIMER8_2_RES 0b00000000
-		#endif
+	#define TIMER8_3_CTL    TM3C
+	#define TIMER8_3_CNT    TM3CT
+	#define TIMER8_3_SCL    TM3S
+	#define TIMER8_3_BND    TM3B
 
-		#if TIMER8_2_INV
-			#define TIMER8_2_POL Inverse
-		#else
-			#define TIMER8_2_POL
-		#endif
 
+	#if TIMER8_2_6BIT
+		#define TIMER8_2_RES 0b10000000
+	#else
+		#define TIMER8_2_RES 0b00000000
 	#endif
 
 
-	#if TIMER8_USE_TM3
-
-		#if TIMER8_3_6BIT
-			#define TIMER8_3_RES 0b10000000
-		#else
-			#define TIMER8_3_RES 0b00000000
-		#endif
-
-		#if TIMER8_3_INV
-			#define TIMER8_3_POL Inverse
-		#else
-			#define TIMER8_3_POL
-		#endif
-
+	#if TIMER8_2_INV
+		#define TIMER8_2_POL Inverse
+	#else
+		#define TIMER8_2_POL
 	#endif
+
+
+	#if TIMER8_3_6BIT
+		#define TIMER8_3_RES 0b10000000
+	#else
+		#define TIMER8_3_RES 0b00000000
+	#endif
+
+	#if TIMER8_3_INV
+		#define TIMER8_3_POL Inverse
+	#else
+		#define TIMER8_3_POL
+	#endif
+
 
 	/////////////////////////
     // DO NOT TOUCH -- END //
     /////////////////////////
 #endif
+
+
+//=========//
+// 11b PWM //
+//=========//
+
+#ifidni PERIPH_PWM_11B, 1
+
+	#define PWM_USE_G0 1
+	#define PWM_USE_G1 1
+	#define PWM_USE_G2 1
+	#define PWM_SOLVER_ENABLE 1  // CHECK HEADER FOR RESOURCE USAGE!
+
+
+	// PWM 0
+    #define PWM_0_CLOCK     SYSCLK       // SYSCLK, IHRC, IHRC*2
+	#define PWM_0_CLK_HZ    SYSTEM_CLOCK // Clock frequency
+	#define PWM_0_OUTPUT    PB4          // Disable, PB5, PA0, PB4
+	#define PWM_0_INV       0            // Invert PWM output, 0/1
+	#define PWM_0_INT_ZERO  0            // Interrupt at zero or duty, 0/1
+
+
+	// PWM 1
+    #define PWM_1_CLOCK     SYSCLK
+	#define PWM_1_CLK_HZ    SYSTEM_CLOCK
+	#define PWM_1_OUTPUT    PA4
+	#define PWM_1_INV       0
+	#define PWM_1_INT_ZERO  0            // INTERUPT ONLY SUPPORTED ON G0
+
+
+	// PWM 2
+    #define PWM_2_CLOCK     SYSCLK
+	#define PWM_2_CLK_HZ    SYSTEM_CLOCK
+	#define PWM_2_OUTPUT    PB3
+	#define PWM_2_INV       1
+	#define PWM_2_INT_ZERO  0            // INTERUPT ONLY SUPPORTED ON G0
+
+
+    ///////////////////////////
+    // DO NOT TOUCH -- START //
+    ///////////////////////////
+
+    #define PWM_RESET      Reset
+    #define PWM_ENABLE     Enable
+
+	// PWM 0
+	#define PWM_0_CTL      PWMG0C
+    #define PWM_0_SCALAR   PWMG0S
+    #define PWM_0_COUNT_H  PWMG0CUBH
+    #define PWM_0_COUNT_L  PWMG0CUBL
+    #define PWM_0_DUTY_H   PWMG0DTH
+    #define PWM_0_DUTY_L   PWMG0DTL
+
+	// PWM 1
+	#define PWM_1_CTL      PWMG1C
+    #define PWM_1_SCALAR   PWMG1S
+    #define PWM_1_COUNT_H  PWMG1CUBH
+    #define PWM_1_COUNT_L  PWMG1CUBL
+    #define PWM_1_DUTY_H   PWMG1DTH
+    #define PWM_1_DUTY_L   PWMG1DTL
+
+	// PWM 2
+	#define PWM_2_CTL      PWMG2C
+    #define PWM_2_SCALAR   PWMG2S
+    #define PWM_2_COUNT_H  PWMG2CUBH
+    #define PWM_2_COUNT_L  PWMG2CUBL
+    #define PWM_2_DUTY_H   PWMG2DTH
+    #define PWM_2_DUTY_L   PWMG2DTL
+
+
+	#if PWM_0_INV
+		#define PWM_0_POL Inverse
+	#else
+		#define PWM_0_POL
+	#endif
+
+	#if PWM_0_INT_ZERO
+		#define PWM_0_INT 0b10000000
+	#else
+		#define PWM_0_INT 0b00000000
+	#endif
+
+
+	#if PWM_1_INV
+		#define PWM_1_POL Inverse
+	#else
+		#define PWM_1_POL
+	#endif
+
+	#if PWM_1_INT_ZERO
+		#define PWM_1_INT 0b10000000
+	#else
+		#define PWM_1_INT 0b00000000
+	#endif
+
+
+	#if PWM_2_INV
+		#define PWM_2_POL Inverse
+	#else
+		#define PWM_2_POL
+	#endif
+
+	#if PWM_2_INT_ZERO
+		#define PWM_2_INT 0b10000000
+	#else
+		#define PWM_2_INT 0b00000000
+	#endif
+
+    /////////////////////////
+    // DO NOT TOUCH -- END //
+    /////////////////////////
+#endif
+
 
 
 //===================//
