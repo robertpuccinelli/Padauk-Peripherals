@@ -40,11 +40,11 @@ WORD  stepper_steps_per_rev;
 
 STATIC EWORD steps_remaining;
 
-#ifidni STEPPER_TIMER_SRC, PWM0
+#IFIDNI STEPPER_TIMER_SRC, PWM0
 	STATIC EWORD &target_freq = pwm11_target_freq;
-#else
+#ELSE
 	STATIC EWORD &target_freq = timer8_target_freq;
-#endif
+#ENDIF
 
 
 //==================//
@@ -62,6 +62,10 @@ static void Set_Dist(void)
 	math_divisor = math_product;
 	steps_remaining = math_dividend;
 
+	#IFDIFI STEPPER_TIMER_SRC, PWM0
+		steps_remaining <<= 1;  // Double to compensate for 8b timer period mode
+	#ENDIF
+
 	if (steps_remaining == 0) steps_remaining = 1;
 }
 
@@ -72,21 +76,21 @@ static void Set_Dist(void)
 
 void Stepper_Enable (void)
 {
-	#if STEPPER_ENABLE_INV
+	#IF STEPPER_ENABLE_INV
 		$ STEPPER_PIN_EN OUT, LOW;
-	#else
+	#ELSE
 		$ STEPPER_PIN_EN OUT, HIGH;
-	#endif
+	#ENDIF
 }
 
 
 void Stepper_Disable (void)
 {
-	#if STEPPER_ENABLE_INV
+	#IF STEPPER_ENABLE_INV
 		$ STEPPER_PIN_EN OUT, HIGH;
-	#else
+	#ELSE
 		$ STEPPER_PIN_EN OUT, LOW;
-	#endif
+	#ENDIF
 }
 
 
@@ -98,6 +102,14 @@ void Stepper_Initialize (void)
 		$ STEPPER_PIN_STEP OUT, LOW;
 		stepper_module_initialized = 1;
 		Stepper_Disable();
+
+		#IFIDNI STEPPER_TIMER_SRC, PWM0
+			PWM11_0_Initialize();
+		#ELSEIFIDNI STEPPER_TIMER_SRC, TM2
+			Timer2_Initialize();
+		#ELSEIFIDNI STEPPER_TIMER_SRC, TM3
+			Timer3_Initialize();
+		#ENDIF
 	}
 }
 
@@ -120,30 +132,27 @@ void Stepper_Set_Vel (void)
 		math_mult_b = stepper_steps_per_rev;
 		word_multiply();
 
-		math_quotient = math_product;
+		math_dividend = math_product;
 		math_divisor = 60;
 		eword_divide();
 
-		math_quotient = math_dividend;
+		math_dividend = math_quotient;
 		math_divisor = stepper_units_per_rev;
 		eword_divide();
 
-		target_freq = math_dividend;
+		target_freq = math_quotient;
 
-		#ifidni STEPPER_TIMER_SRC, PWM0
+		#IFIDNI STEPPER_TIMER_SRC, PWM0
 			pwm11_use_solver = 1;
 			pwm11_duty_percent = 50;
 			PWM11_0_Set_Parameters();
-
-		#elseifidni STEPPER_TIMER_SRC, TM2
+		#ELSEIFIDNI STEPPER_TIMER_SRC, TM2
 			timer8_use_solver = 1;
 			Timer2_Set_Parameters();
-
-		#elseifidni STEPPER_TIMER_SRC, TM3
+		#ELSEIFIDNI STEPPER_TIMER_SRC, TM3
 			timer8_use_solver = 1;
 			Timer3_Set_Parameters();
-
-		#endif
+		#ENDIF
 	}
 }
 
@@ -160,16 +169,14 @@ void Stepper_Start (void)
 		}
 		else INTEN.STEPPER_INTR = 0;
 
-		#ifidni STEPPER_TIMER_SRC, PWM0
+		#IFIDNI STEPPER_TIMER_SRC, PWM0
 			PWM11_0_Start();
-
-		#elseifidni STEPPER_TIMER_SRC, TM2
+		#ELSEIFIDNI STEPPER_TIMER_SRC, TM2
 			Timer2_Start();
-
-		#elseifidni STEPPER_TIMER_SRC, TM3
+		#ELSEIFIDNI STEPPER_TIMER_SRC, TM3
 			Timer3_Start();
+		#ENDIF
 
-		#endif
 		stepper_is_moving = 1;
 	}
 }
@@ -179,16 +186,14 @@ void Stepper_Stop (void)
 {
 	if (stepper_module_initialized)
 	{
-		#ifidni STEPPER_TIMER_SRC, PWM0
+		#IFIDNI STEPPER_TIMER_SRC, PWM0
 			PWM11_0_Stop();
-
-		#elseifidni STEPPER_TIMER_SRC, TM2
+		#ELSEIFIDNI STEPPER_TIMER_SRC, TM2
 			Timer2_Stop();
-
-		#elseifidni STEPPER_TIMER_SRC, TM3
+		#ELSEIFIDNI STEPPER_TIMER_SRC, TM3
 			Timer3_Stop();
+		#ENDIF
 
-		#endif
 		stepper_is_moving = 0;
 	}
 }
@@ -206,6 +211,14 @@ void Stepper_Release (void)
 {
 	if (stepper_module_initialized)
 	{
+		#IFIDNI STEPPER_TIMER_SRC, PWM0
+			PWM11_0_Release();
+		#ELSEIFIDNI STEPPER_TIMER_SRC, TM2
+			Timer2_Release();
+		#ELSEIFIDNI STEPPER_TIMER_SRC, TM3
+			Timer3_Release();
+		#ENDIF
+
 		$ STEPPER_PIN_EN   IN;
 		$ STEPPER_PIN_DIR  IN;
 		$ STEPPER_PIN_STEP IN;

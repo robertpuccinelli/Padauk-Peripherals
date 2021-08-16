@@ -284,7 +284,7 @@ void	FPPA0 (void)
 	Stepper_Disable();
 	Stepper_Release();
 	
-/*
+
 	Stepper_Initialize();
 	stepper_dist_mode = 1;
 	stepper_dist_per_run = 5;
@@ -299,7 +299,7 @@ void	FPPA0 (void)
 		Stepper_Release();
 	}
 
-*/	
+
 	
 	while (1)
 	{
