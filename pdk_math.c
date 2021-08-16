@@ -155,6 +155,7 @@ void eword_divide(void)
 
 void byte_multiply(void)
 {
+	math_product = 0;
 #IF HAS_MULTIPLIER
 	mulop = math_mult_a$0;
 	A = math_mult_b$0;
@@ -164,7 +165,6 @@ void byte_multiply(void)
 
 #ELSE
 	counter_mult = 8;
-	math_product = 0;
 
 	do {
 		math_mult_a$0 >>= 1;
@@ -177,6 +177,7 @@ void byte_multiply(void)
 
 void word_multiply(void)
 {
+	math_product = 0;
 #IF HAS_MULTIPLIER
 	mulop = math_mult_a$0;
 	A = math_mult_b$0;
@@ -202,7 +203,6 @@ void word_multiply(void)
 
 #ELSE
 	counter_mult = 16;
-	math_product = 0;
 
 	do {
 		math_mult_a >>= 1;

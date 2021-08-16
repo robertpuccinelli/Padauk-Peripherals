@@ -431,7 +431,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 
     // INTERFACE COMPATABILITY WARNING
     #ifidni LCD_COMM_MODE, I2C
-        #ifz PERIPH_I2C_M
+        #ifz PERIPH_I2C
             .error LCD with I2C Comm Mode REQUIRES PERIPH_I2C to be enabled! 
         #endif
         #define LCD_2L_SETTINGS (LCD_FUNC_F | LCD_FUNC_2L | LCD_FUNC_HEIGHT1X)
@@ -460,7 +460,7 @@ Copyright (c) 2021 Robert R. Puccinelli
     // DO NOT TOUCH -- START //
     ///////////////////////////
     #ifidni EEPROM_COMM_MODE, I2C
-        #ifz PERIPH_I2C_M
+        #ifz PERIPH_I2C
             .error EEPROM with I2C Comm Mode REQUIRES PERIPH_I2C to be enabled! 
         #endif
     #endif
