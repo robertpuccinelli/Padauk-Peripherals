@@ -26,8 +26,10 @@ Copyright (c) 2021 Robert R. Puccinelli
 #ifndef SYSTEM_SETTINGS_H
 #define SYSTEM_SETTINGS_H
 
-#define SYSTEM_CLOCK   4000000   // Change to match your choice of SYSCLK in Hz
 #define IC_TARGET      PMS132    // PMS150C, PMS132, PMS134
+
+#define SYSTEM_CLOCK   4000000   // Change to match your choice of SYSCLK in Hz
+#define ICE_ILRC_HZ    34700     // ILRC clock of ICE for code validation
 
 #define PERIPH_I2C     1         // I2C Master.    Disable: 0, Enable: 1
 #define PERIPH_PWM_11B 1         // 11B PWM.       Disable: 0, Enable: 1
@@ -71,9 +73,6 @@ Copyright (c) 2021 Robert R. Puccinelli
 //============================//
 // SUPPORTED MICROCONTROLLERS //
 //============================//
-
-
-#define ICE_ILRC_HZ 34700	// ILRC clock of ICE for code validation
 
 
 #ifidni IC_TARGET, PMS150C
@@ -483,12 +482,12 @@ Copyright (c) 2021 Robert R. Puccinelli
 
 
 	// TIMER 2
-	#define TIMER8_2_CLK    ILRC    // ILRC, SYSCLK, other 
-	#define TIMER8_2_HZ     ILRC_HZ //ILRC_HZ, SYSTEM_CLOCK, other. ICE_ILRC_HZ for TESTING ONLY
-	#define TIMER8_2_MODE   Period  // Period, PWM
-	#define TIMER8_2_OUT    PB2     // Ex: Disable, PB2, PA3, PB4
-	#define TIMER8_2_6BIT   0       // 0: 8-bit PWM;           1: 6-bit PWM
-	#define TIMER8_2_INV    0       // 0: Out polarity normal; 1: Out polarity inverted
+	#define TIMER8_2_CLK    ILRC        // ILRC, SYSCLK, other 
+	#define TIMER8_2_HZ     ICE_ILRC_HZ // ILRC_HZ, SYSTEM_CLOCK, other. ICE_ILRC_HZ for TESTING ONLY
+	#define TIMER8_2_MODE   Period      // Period, PWM
+	#define TIMER8_2_OUT    PB2         // Ex: Disable, PB2, PA3, PB4
+	#define TIMER8_2_6BIT   0           // 0: 8-bit PWM;           1: 6-bit PWM
+	#define TIMER8_2_INV    0           // 0: Out polarity normal; 1: Out polarity inverted
 
 
 	// TIMER 3
@@ -667,9 +666,9 @@ Copyright (c) 2021 Robert R. Puccinelli
 #ifidni PERIPH_STEPPER, 1
 	#define STEPPER_PIN_EN	   PA.0
     #define STEPPER_PIN_DIR    PA.4
-	#define STEPPER_PIN_STEP   PA3 // Must be compatible with timer source
-	#define STEPPER_ENABLE_INV 1    // Invert enable signal. 1 = Enable LOW
-	#define STEPPER_TIMER_SRC  TM2  // TM2, TM3 or PWM0 due to availability of interrupts
+	#define STEPPER_PIN_STEP   PA3   // Must be compatible with timer source
+	#define STEPPER_ENABLE_INV 1     // Invert enable signal. 1 = Enable LOW
+	#define STEPPER_TIMER_SRC  TM2   // TM2, TM3 or PWM0 due to availability of interrupts
 
 	// NOTE:  Timer output pin, mode, AND autosolver will be overwritten
 

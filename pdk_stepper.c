@@ -32,14 +32,16 @@ BIT        stepper_dir                : stepper_flags.?; // Motor driver directi
 BIT        stepper_dist_mode          : stepper_flags.?; // Motor mode flag
 BIT        stepper_is_moving          : stepper_flags.?; // Flag to report status
 STATIC BIT stepper_module_initialized : stepper_flags.?;
+STATIC BIT stepper_timer_period_state : stepper_flags.?;
 
 EWORD stepper_dist_per_run;  // target distance if in dist_mode
 WORD  stepper_units_per_min; // target velocity
 WORD  stepper_units_per_rev;
 WORD  stepper_steps_per_rev;
 
-STATIC EWORD steps_remaining;
-
+STATIC WORD revs_remaining    = 0;
+STATIC WORD final_step_target = 0;
+STATIC WORD current_step      = 0;
 #IFIDNI STEPPER_TIMER_SRC, PWM0
 	STATIC EWORD &target_freq = pwm11_target_freq;
 #ELSE
@@ -54,19 +56,25 @@ STATIC EWORD steps_remaining;
 
 static void Set_Dist(void)
 {
-	math_mult_a = stepper_units_per_rev;
+	// Need to convert dist tracking to revs. Cannot multiply dist by steps per rev. Limits dist to WORD.
+	math_dividend = stepper_dist_per_run;
+	math_divisor  = stepper_units_per_rev;
+	eword_divide();
+
+	revs_remaining = math_quotient;
+
+	math_mult_a = math_remainder;
 	math_mult_b = stepper_steps_per_rev;
 	word_multiply();
 
-	math_quotient = stepper_dist_per_run;
-	math_divisor = math_product;
-	steps_remaining = math_dividend;
+	math_dividend = math_product;
+	math_divisor = stepper_units_per_rev;
+	eword_divide();
 
-	#IFDIFI STEPPER_TIMER_SRC, PWM0
-		steps_remaining <<= 1;  // Double to compensate for 8b timer period mode
-	#ENDIF
+	final_step_target = math_quotient;
 
-	if (steps_remaining == 0) steps_remaining = 1;
+	stepper_timer_period_state = 0;
+	if (!revs_remaining && final_step_target == 0) final_step_target = 1;
 }
 
 
@@ -201,8 +209,29 @@ void Stepper_Stop (void)
 
 void Stepper_Dist_Mode_Interrupt (void)
 {
-	steps_remaining--;
-	if (!steps_remaining) Stepper_Stop();
+	#IFDIFI STEPPER_TIMER_SRC, PWM0
+		if (stepper_timer_period_state) 
+		{
+			current_step++;
+			if (current_step == stepper_steps_per_rev) 
+			{ 
+				revs_remaining--;
+				current_step = 0 ;
+			}
+			if (!revs_remaining && current_step == final_step_target) Stepper_Stop();
+			stepper_timer_period_state = 0;
+		}
+		else stepper_timer_period_state = 1;
+	#ELSE
+		current_step++;
+		if (current_step == steps_per_rev) 
+		{ 
+			revs_remaining--;
+			current_step = 0 ;
+		}
+		if (!revs_remaining && current_step == final_step_target) Stepper_Stop();
+	#ENDIF
+
 	INTRQ.STEPPER_INTR = 0;
 }
 

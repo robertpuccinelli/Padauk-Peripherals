@@ -26,7 +26,6 @@ void	FPPA0 (void)
 	math_divisor = 1;
 	$ PA.7 OUT, HIGH;
 	byte_divide();
-	assert
 	$ PA.7 LOW;
 
 	math_dividend = 65535;
@@ -287,7 +286,7 @@ void	FPPA0 (void)
 
 	Stepper_Initialize();
 	stepper_dist_mode = 1;
-	stepper_dist_per_run = 5;
+	stepper_dist_per_run = 1;
 	stepper_dir = 0;
 	Stepper_Set_Dir();
 	Stepper_Enable();
@@ -303,6 +302,13 @@ void	FPPA0 (void)
 	
 	while (1)
 	{
+		
+		if (!stepper_is_moving) // Place in while loop for testing of dist mode
+		{
+			Stepper_Disable();
+			Stepper_Release();
+		}
+
 		nop;
 	}
 
