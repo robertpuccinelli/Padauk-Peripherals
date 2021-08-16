@@ -29,7 +29,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 #define SYSTEM_CLOCK   4000000   // Change to match your choice of SYSCLK in Hz
 #define IC_TARGET      PMS132    // PMS150C, PMS132, PMS134
 
-#define PERIPH_I2C_M   1         // I2C Master.    Disable: 0, Enable: 1
+#define PERIPH_I2C     1         // I2C Master.    Disable: 0, Enable: 1
 #define PERIPH_PWM_11B 1         // 11B PWM.       Disable: 0, Enable: 1
 #define PERIPH_BUTTON  1         // Buttons.       Disable: 0, Enable: 1
 #define PERIPH_LCD     1         // LCD.           Disable: 0, Enable: 1
@@ -43,11 +43,11 @@ Copyright (c) 2021 Robert R. Puccinelli
 //
 // Use this area to track which resources are used and where
 //
-//    PA0    -             PB0    -           PC0    X
+//    PA0    STEP_EN       PB0    -           PC0    X
 //    PA1    X             PB1    BTN         PC1    X    
 //    PA2    X             PB2    TM2         PC2    X
-//    PA3    STEP_D        PB3    PWMG2       PC3    X
-//    PA4    STEP_S        PB4    PWMG0       PC4    X
+//    PA3    STEP_S        PB3    PWMG2       PC3    X
+//    PA4    STEP_D        PB4    PWMG0       PC4    X
 //    PA5    -             PB5    -           PC5    X
 //    PA6    I2C_SDA       PB6    TM3         PC6    X
 //    PA7    I2C_SCL       PB7    BTN         PC7    X
@@ -132,7 +132,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 //============//
 // I2C MASTER //
 //============//
-#ifidni PERIPH_I2C_M, 1
+#ifidni PERIPH_I2C, 1
     #define I2C_SDA     PA.6
     #define I2C_SCL     PA.7
     #define I2C_WR_CMD  0b0
@@ -183,7 +183,7 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define BTN_TIMER_BND  TM2B
     #define BTN_TIMER_SCL  TM2S
     #define BTN_TIMER_CLK  ILRC // Refer to datasheet and XXX.INC for options
-
+	#define BTN_INTR       INTR_TM2
 
     // Debouncer timing settings
     #define BTN_DEBOUNCE_T  5       // ms to wait before validating button state    
@@ -660,22 +660,66 @@ Copyright (c) 2021 Robert R. Puccinelli
 #endif
 
 
-
 //===================//
 // STEPPER INTERFACE //
 //===================//
 
 #ifidni PERIPH_STEPPER, 1
-    #define EEPROM_COMM_MODE    I2C       // 
-    #define EEPROM_DRIVER       M24C01    //  
-    #define EEPROM_WRITE_CTL    NONE      // Pin on ~WC (ie PA.7)
-    #define EEPROM_PAGE_SIZE    16        // Page size in bytes
-    #define EEPROM_MEM_SIZE     128       // Memory size in bytes
+	#define STEPPER_PIN_EN	   PA.0
+    #define STEPPER_PIN_DIR    PA.4
+	#define STEPPER_PIN_STEP   PA3 // Must be compatible with timer source
+	#define STEPPER_ENABLE_INV 1    // Invert enable signal. 1 = Enable LOW
+	#define STEPPER_TIMER_SRC  TM2  // TM2, TM3 or PWM0 due to availability of interrupts
+
+	// NOTE:  Timer output pin, mode, AND autosolver will be overwritten
 
 
     ///////////////////////////
     // DO NOT TOUCH -- START //
     ///////////////////////////
+	#ifidni     STEPPER_TIMER_SRC, TM2
+		.echo "STEPPER IS OVERWRITING TM2 SYSTEM SETTINGS" 
+		#undef  TIMER8_USE_TM2
+		#undef  TIMER8_SOLVER_ENABLE
+		#undef  TIMER8_2_OUT
+		#undef  TIMER8_2_MODE
+
+		#define TIMER8_USE_TM2       1
+		#define TIMER8_SOLVER_ENABLE 1
+		#define TIMER8_2_OUT   STEPPER_PIN_STEP
+		#define TIMER8_2_MODE  Period
+		#define STEPPER_INTR   INTR_TM2
+
+	#elseifidni STEPPER_TIMER_SRC, TM3
+		.echo "STEPPER IS OVERWRITING TM3 SYSTEM SETTINGS" 
+		#undef  TIMER8_USE_TM3
+		#undef  TIMER8_SOLVER_ENABLE
+		#undef  TIMER8_3_OUT
+		#undef  TIMER8_3_MODE
+
+		#define TIMER8_USE_TM3       1
+		#define TIMER8_SOLVER_ENABLE 1
+		#define TIMER8_3_OUT   STEPPER_PIN_STEP
+		#define TIMER8_3_MODE  Period
+		#define STEPPER_INTR   INTR_TM3
+
+	#elseifidni STEPPER_TIMER_SRC, PWM0
+		.echo "STEPPER IS OVERWRITING PWM_0 SYSTEM SETTINGS" 
+		#undef  PWM_USE_G0
+		#undef  PWM_SOLVER_ENABLE
+		#undef  PWM_0_OUTPUT
+		#undef  PWM_0_INV
+		#undef  PWM_0_INT_ZERO
+
+		#define PWM_USE_G0        1
+		#define PWM_SOLVER_ENABLE 1
+		#define PWM_0_OUTPUT   STEPPER_PIN_STEP
+		#define PWM_0_INV      0
+		#define PWM_0_INT_ZERO 0
+		#define STEPPER_INTR   INTR_PWM
+	#endif
+
+
     #ifdifi PERIPH_PWM_11B, 1
         .error PERIPH_STEPPER REQUIRES PERIPH_PWM_11B to be enabled! 
     #endif

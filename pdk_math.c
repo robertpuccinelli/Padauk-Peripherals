@@ -51,8 +51,8 @@ EWORD &math_quotient  = math_eword2$0;
 EWORD &math_divisor   = math_eword3$0;
 EWORD &math_dividend  = math_dword1$0;
 
-WORD &math_mult_a    = math_eword1$0;
-WORD &math_mult_b    = math_eword2$0;
+WORD &math_mult_a     = math_eword1$0;
+WORD &math_mult_b     = math_eword2$0;
 DWORD &math_product   = math_dword1$0;
 
 STATIC BYTE &counter_div  = math_dword1$3;

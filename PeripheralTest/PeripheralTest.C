@@ -3,13 +3,13 @@ Copyright (c) 2021 Robert R. Puccinelli
 */
 #include	"../system_settings.h"
 //#include	"../pdk_math.h"
-#include "../pdk_timer_8b.h"
+//#include	"../pdk_timer_8b.h"
 //#include	"../pdk_i2c.h"
 //#include	"../pdk_pwm_11b.h"
 //#include 	"../pdk_button.h"
 //#include 	"../pdk_lcd.h"
 //#include	"../pdk_eeprom.h"
-
+#include	"../pdk_stepper.h"
 
 void	FPPA0 (void)
 {
@@ -263,7 +263,43 @@ void	FPPA0 (void)
 */
 
 
+	//=======================//
+	// STEPPER FEATURE CHECK //
+	//=======================//
 
+	stepper_units_per_rev = 10;
+	stepper_steps_per_rev = 1600;
+
+	Stepper_Initialize();
+	Stepper_units_per_min = 20;
+	Stepper_Set_Vel();
+	stepper_dir = 1;
+	Stepper_Set_Dir();
+
+	stepper_dist_mode = 0;
+	Stepper_Enable();
+	Stepper_Start();
+	.delay(8000000)
+	Stepper_Stop();
+	Stepper_Disable();
+	Stepper_Release();
+	
+/*
+	Stepper_Initialize();
+	stepper_dist_mode = 1;
+	stepper_dist_per_run = 5;
+	stepper_dir = 0;
+	Stepper_Set_Dir();
+	Stepper_Enable();
+	Stepper_Start();
+
+	if (!stepper_is_moving) // Place in while loop for testing of dist mode
+	{
+		Stepper_Disable();
+		Stepper_Release();
+	}
+
+*/	
 	
 	while (1)
 	{
@@ -277,9 +313,15 @@ void	Interrupt (void)
 {
 	pushaf;
 
-	if (Intrq.TM2)
+/*
+	if (Intrq.BTN_INTR)
 	{
-//		Button_Debounce_Interrupt();
+		Button_Debounce_Interrupt();
+	}
+*/
+	if (Intrq.STEPPER_INTR)
+	{
+		Stepper_Dist_Mode_Interrupt();
 	}
 
 	popaf;
