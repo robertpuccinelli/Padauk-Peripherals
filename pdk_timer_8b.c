@@ -239,10 +239,10 @@ void Timer2_Set_Parameters(void)
 			case 64 :   TIMER8_2_SCL = TIMER8_2_RES | 0b01100000 | timer8_scalar;
 						break;
 
-			case 16 :   TIMER8_2_SCL = TIMER8_2_RES | 0b0100000 | timer8_scalar;
+			case 16 :   TIMER8_2_SCL = TIMER8_2_RES | 0b01000000 | timer8_scalar;
 						break;
 
-			case  4 :   TIMER8_2_SCL = TIMER8_2_RES | 0b0100000 | timer8_scalar;
+			case  4 :   TIMER8_2_SCL = TIMER8_2_RES | 0b00100000 | timer8_scalar;
 						break;
 
 			default :   TIMER8_2_SCL = TIMER8_2_RES | timer8_scalar;
