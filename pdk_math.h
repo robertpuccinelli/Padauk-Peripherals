@@ -2,22 +2,24 @@
 
 Basic multiplication and division functions.
 
-ROM Consumed : 210B / 0xD2
-RAM Consumed : 13B  / 0x0D
+ROM Consumed : 284B / 0x11C
+RAM Consumed : 11B  / 0x0B
 
 
 NOTE:
 
 	Function maximum run time @ 4 MHz
 
-	byte_divide   31  us
-	word_divide   101 us
-	eword_divide  167 us
+	byte_divide   28  us
+	word_divide   92  us
+	eword_divide  148 us
+	dword_divide  204 us
 
 	byte_multiply 30  us  3 us WITH MULTIPLIER
 	word_multiply 62  us  9 us WITH MULTIPLIER 
 
-	Division framework sourced from Wikipedia Division Algorithm, Long Div
+	Division framework sourced from Wikipedia Division Algorithm, Long Div.
+	Div was made more efficient by having quotient and dividend share memory.
 	Multiplication framework (non-mulop) duplicated from Padauk Code Gen
 	Multiplication framework (mulop) developed from experience
 
@@ -36,9 +38,9 @@ Copyright (c) 2021 Robert R. Puccinelli
 //===========//
 
 EXTERN EWORD &math_remainder;
-EXTERN EWORD &math_quotient;
+EXTERN DWORD &math_quotient;
 EXTERN EWORD &math_divisor;
-EXTERN EWORD &math_dividend;
+EXTERN DWORD &math_dividend;
 
 EXTERN WORD &math_mult_a;
 EXTERN WORD &math_mult_b;
@@ -52,5 +54,6 @@ EXTERN DWORD &math_product;
 void byte_divide   (void);
 void word_divide   (void);
 void eword_divide  (void);
+void dword_divide  (void);
 void byte_multiply (void);
 void word_multiply (void);

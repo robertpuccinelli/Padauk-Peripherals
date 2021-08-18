@@ -2,42 +2,48 @@
 Copyright (c) 2021 Robert R. Puccinelli
 */
 #include	"../system_settings.h"
-//#include	"../pdk_math.h"
+#include	"../pdk_math.h"
 //#include	"../pdk_timer_8b.h"
 //#include	"../pdk_i2c.h"
 //#include	"../pdk_pwm_11b.h"
 //#include 	"../pdk_button.h"
 //#include 	"../pdk_lcd.h"
 //#include	"../pdk_eeprom.h"
-#include	"../pdk_stepper.h"
+//#include	"../pdk_stepper.h"
 
 void	FPPA0 (void)
 {
 	.ADJUST_IC	SYSCLK=IHRC/4, IHRC=16MHz, VDD=5V;		//	SYSCLK=IHRC/4
 
-	ENGINT;		// Enable global interrupt
+//	ENGINT;		// Enable global interrupt
 
 	//====================//
 	// MATH UTILITY CHECK //
 	//====================//
 
-/*
-	math_dividend = 255;
+
+	math_dividend = 0xFF;
 	math_divisor = 1;
 	$ PA.7 OUT, HIGH;
 	byte_divide();
 	$ PA.7 LOW;
 
-	math_dividend = 65535;
+	math_dividend = 0xFFFF;
 	math_divisor = 1;
 	$ PA.7 HIGH;
 	word_divide();
 	$ PA.7 LOW;
 
-	math_dividend = 16777215;
+	math_dividend = 0xFFFFFF;
 	math_divisor = 1;
 	$ PA.7 HIGH;
 	eword_divide();
+	$ PA.7 LOW;
+
+	math_dividend = 0xFFFFFFFF;
+	math_divisor = 1;
+	$ PA.7 HIGH;
+	dword_divide();
 	$ PA.7 LOW;
 
 	math_mult_a = 255;
@@ -52,7 +58,7 @@ void	FPPA0 (void)
 	word_multiply();
 	$ PA.7 LOW;
 
-*/
+
 
 
 	//========================//
@@ -265,12 +271,12 @@ void	FPPA0 (void)
 	//=======================//
 	// STEPPER FEATURE CHECK //
 	//=======================//
-
-	stepper_units_per_rev = 10;
+/*
+	stepper_units_per_rev = 230;
 	stepper_steps_per_rev = 1600;
 
 	Stepper_Initialize();
-	Stepper_units_per_min = 20;
+	Stepper_units_per_min = 1;
 	Stepper_Set_Vel();
 	stepper_dir = 1;
 	Stepper_Set_Dir();
@@ -286,9 +292,11 @@ void	FPPA0 (void)
 
 	Stepper_Initialize();
 	stepper_dist_mode = 1;
-	stepper_dist_per_run = 1;
+	stepper_dist_per_run = 11;
 	stepper_dir = 0;
 	Stepper_Set_Dir();
+	Stepper_units_per_min = 64400;
+	Stepper_Set_Vel();
 	Stepper_Enable();
 	Stepper_Start();
 
@@ -298,16 +306,16 @@ void	FPPA0 (void)
 		Stepper_Release();
 	}
 
-
+*/
 	
 	while (1)
 	{
 		
-		if (!stepper_is_moving) // Place in while loop for testing of dist mode
-		{
-			Stepper_Disable();
-			Stepper_Release();
-		}
+//		if (!stepper_is_moving) // Place in while loop for testing of dist mode
+//		{
+//			Stepper_Disable();
+//			Stepper_Release();
+//		}
 
 		nop;
 	}
@@ -325,10 +333,10 @@ void	Interrupt (void)
 		Button_Debounce_Interrupt();
 	}
 */
-	if (Intrq.STEPPER_INTR)
-	{
-		Stepper_Dist_Mode_Interrupt();
-	}
+//	if (Intrq.STEPPER_INTR)
+//	{
+//		Stepper_Dist_Mode_Interrupt();
+//	}
 
 	popaf;
 }
