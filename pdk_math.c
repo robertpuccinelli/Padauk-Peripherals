@@ -69,7 +69,10 @@ void byte_divide(void)
 	counter = 8;
 	math_remainder = 0;
 
-	if (math_dividend < math_divisor) math_remainder = math_dividend;
+	if (math_dividend < math_divisor) {
+		math_remainder = math_dividend;
+		math_quotient  = 0;
+	}
 	else
 	{
 		do 
@@ -93,7 +96,10 @@ void word_divide(void)
 	counter = 16;
 	math_remainder = 0;
 
-	if (math_dividend < math_divisor) math_remainder = math_dividend;
+	if (math_dividend < math_divisor) {
+		math_remainder = math_dividend;
+		math_quotient  = 0;
+	}
 	else
 	{
 		do 
@@ -120,7 +126,10 @@ void eword_divide(void)
 	counter = 24;
 	math_remainder = 0;
 
-	if (math_dividend < math_divisor) math_remainder = math_dividend;
+	if (math_dividend < math_divisor) {
+		math_remainder = math_dividend;
+		math_quotient  = 0;
+	}
 	else
 	{
 		do 
@@ -148,7 +157,10 @@ void dword_divide(void)
 	counter = 32;
 	math_remainder = 0;
 
-	if (math_dividend < math_divisor) math_remainder = math_dividend;
+	if (math_dividend < math_divisor) {
+		math_remainder = math_dividend;
+		math_quotient  = 0;
+	}
 	else
 	{
 		do 
