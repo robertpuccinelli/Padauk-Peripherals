@@ -222,7 +222,11 @@ void Timer2_Set_Parameters(void)
 			{
 				timer8_pwm_clk =  TIMER8_2_HZ;
 				#IFIDNI TIMER8_2_MODE, PWM
-					if (TIMER8_2_6BIT) timer8_use_6b_pwm = 1;
+					#IF TIMER8_2_6BIT 
+						timer8_use_6b_pwm = 1;
+					#ELSE 
+						timer8_use_6b_pwm = 0;
+					#ENDIF
 					else timer8_use_6b_pwm = 0;
 					Timer8_Solve_PWM();
 					Timer8_Solve_Duty();
@@ -306,8 +310,11 @@ void Timer3_Set_Parameters(void)
 			{
 				timer8_pwm_clk =  TIMER8_3_HZ;
 				#IFIDNI TIMER8_3_MODE, PWM
-					if (TIMER8_3_6BIT) timer8_use_6b_pwm = 1;
-					else timer8_use_6b_pwm = 0;
+					#IF TIMER8_3_6BIT 
+						timer8_use_6b_pwm = 1;
+					#ELSE 
+						timer8_use_6b_pwm = 0;
+					#ENDIF
 					Timer8_Solve_PWM();
 					Timer8_Solve_Duty();
 				#ELSE
