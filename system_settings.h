@@ -32,7 +32,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 #define ICE_ILRC_HZ    34700     // ILRC clock of ICE for code validation
 
 #define PERIPH_I2C     1         // I2C Master.    Disable: 0, Enable: 1
-#define PERIPH_PWM_11B 1         // 11B PWM.       Disable: 0, Enable: 1
+#define PERIPH_PWM_11B 0         // 11B PWM.       Disable: 0, Enable: 1
 #define PERIPH_BUTTON  1         // Buttons.       Disable: 0, Enable: 1
 #define PERIPH_LCD     1         // LCD.           Disable: 0, Enable: 1
 #define PERIPH_EEPROM  1         // EEPROM.        Disable: 0, Enable: 1
@@ -45,21 +45,21 @@ Copyright (c) 2021 Robert R. Puccinelli
 //
 // Use this area to track which resources are used and where
 //
-//    PA0    STEP_EN       PB0    -           PC0    X
+//    PA0    STEP_EN       PB0    BTN         PC0    X
 //    PA1    X             PB1    BTN         PC1    X    
-//    PA2    X             PB2    TM2         PC2    X
-//    PA3    STEP_S        PB3    PWMG2       PC3    X
-//    PA4    STEP_D        PB4    PWMG0       PC4    X
+//    PA2    X             PB2    BTN         PC2    X
+//    PA3    STEP_S        PB3    BTN         PC3    X
+//    PA4    STEP_D        PB4    -           PC4    X
 //    PA5    -             PB5    -           PC5    X
-//    PA6    I2C_SDA       PB6    TM3         PC6    X
-//    PA7    I2C_SCL       PB7    BTN         PC7    X
+//    PA6    I2C_SDA       PB6    -           PC6    X
+//    PA7    I2C_SCL       PB7    -           PC7    X
 //
 //    TM16   -
-//    TM2    BTN
-//    TM3    -
+//    TM2    STEP
+//    TM3    BTN
 //
 //    PWMG0  -
-//    PWMG1  STEP_S
+//    PWMG1  -
 //    PWMG2  -
 //
 //    ADC    -
@@ -176,13 +176,13 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define BTN_WAKE_SYS   1
 
     // Debouncer timer selection
-    #define BTN_TIMER      TM2
-    #define BTN_TIMER_CTL  TM2C
-    #define BTN_TIMER_CNT  TM2CT
-    #define BTN_TIMER_BND  TM2B
-    #define BTN_TIMER_SCL  TM2S
+    #define BTN_TIMER      TM3
+    #define BTN_TIMER_CTL  TM3C
+    #define BTN_TIMER_CNT  TM3CT
+    #define BTN_TIMER_BND  TM3B
+    #define BTN_TIMER_SCL  TM3S
     #define BTN_TIMER_CLK  ILRC // Refer to datasheet and XXX.INC for options
-	#define BTN_INTR       INTR_TM2
+	#define BTN_INTR       INTR_TM3
 
     // Debouncer timing settings
     #define BTN_DEBOUNCE_T  5       // ms to wait before validating button state    
@@ -331,6 +331,14 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define LCD_eq       0x3D
     #define LCD_colon    0x3A
     #define LCD_space    0x20
+	#define LCD_para_l   0x28
+	#define LCD_para_r   0x29
+	#define LCD_star     0x2A
+	#define LCD_plus     0x2B
+	#define LCD_minus    0x2D
+	#define LCD_slash    0x2F
+	#define LCD_return   0x04
+	#define LCD_arrow_r  0x07
 
     ///////////////////////////
     // DO NOT TOUCH -- START //
@@ -355,7 +363,7 @@ Copyright (c) 2021 Robert R. Puccinelli
         #define LCD_ENTRY_INC_DDRAM     0x02
         #define LCD_ENTRY_DEC_DDRAM     0x00
         #define LCD_ENTRY_DISP_SHIFT    0x01
-        #define LCD_ENTRY_DDRAM_SHIF    0x00
+        #define LCD_ENTRY_DDRAM_SHIFT   0x00
 
         #define LCD_DISP_F              0x08
         #define LCD_DISP_ON             0x04
@@ -716,12 +724,10 @@ Copyright (c) 2021 Robert R. Puccinelli
 		#define PWM_0_INV      0
 		#define PWM_0_INT_ZERO 0
 		#define STEPPER_INTR   INTR_PWM
+		#ifdifi PERIPH_PWM_11B, 1
+        	.error PERIPH_STEPPER REQUIRES PERIPH_PWM_11B to be enabled! 
+		#endif
 	#endif
-
-
-    #ifdifi PERIPH_PWM_11B, 1
-        .error PERIPH_STEPPER REQUIRES PERIPH_PWM_11B to be enabled! 
-    #endif
 
     /////////////////////////
     // DO NOT TOUCH -- END //
