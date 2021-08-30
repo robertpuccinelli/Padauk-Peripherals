@@ -60,14 +60,14 @@ EXTERN BIT  pwm11_use_solver;
 //======================//
 // PWM SOLVER VARIABLES //
 //======================//
-
+#IF PERIPH_PWM_11B
 #IF PWM_SOLVER_ENABLE
 
 EXTERN BYTE  &pwm11_duty_percent;
 EXTERN EWORD &pwm11_target_freq;	// Hz
 
 #ENDIF
-
+#ENDIF //PERIPH_PWM_11B
 
 //===================//
 // PROGRAM FUNCTIONS //
