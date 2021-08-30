@@ -26,6 +26,7 @@ BYTE	lcd_device_addr; 	// Device address. Program sets target address w/enum abo
 BYTE	lcd_trx_byte;
 BYTE	lcd_flags = 0;
 BIT		lcd_detected : lcd_flags.?;
+BIT     lcd_command  : lcd_flags.?;
 BIT		lcd_module_initialized : lcd_flags.?;
 
 
@@ -131,7 +132,12 @@ void	LCD_Write_Byte	(void)
 	if ( lcd_module_initialized)
 	{
 		LCD_Delay_While_Busy();
-		LCD_Write_Data();
+		if (lcd_command)
+		{
+			LCD_Write_Command();
+			lcd_command = 0;
+		}
+		else LCD_Write_Data();
 	}
 }
 

@@ -22,8 +22,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 EXTERN BYTE lcd_device_addr;
 EXTERN BYTE lcd_trx_byte;
 EXTERN BYTE lcd_detected;
-
-
+EXTERN BIT  lcd_command;
 //===================//
 // PROGRAM INTERFACE //
 //===================//
