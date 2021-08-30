@@ -34,7 +34,7 @@ BIT        stepper_is_moving          : stepper_flags.?; // Flag to report statu
 STATIC BIT stepper_module_initialized : stepper_flags.?;
 STATIC BIT stepper_timer_period_state : stepper_flags.?;
 
-EWORD stepper_dist_per_run;  // target distance if in dist_mode
+EWORD stepper_units_per_run; // target distance if in dist_mode
 WORD  stepper_units_per_min; // target velocity
 WORD  stepper_units_per_rev;
 WORD  stepper_steps_per_rev;
@@ -57,7 +57,7 @@ STATIC WORD current_step      = 0;
 static void Set_Dist(void)
 {
 	// Need to convert dist tracking to revs. Cannot multiply dist by steps per rev. Limits dist to WORD.
-	math_dividend = stepper_dist_per_run;
+	math_dividend = stepper_units_per_run;
 	math_divisor  = stepper_units_per_rev;
 	eword_divide();
 
@@ -224,7 +224,7 @@ void Stepper_Dist_Mode_Interrupt (void)
 		else stepper_timer_period_state = 1;
 	#ELSE
 		current_step++;
-		if (current_step == steps_per_rev) 
+		if (current_step == stepper_steps_per_rev) 
 		{ 
 			revs_remaining--;
 			current_step = 0 ;
