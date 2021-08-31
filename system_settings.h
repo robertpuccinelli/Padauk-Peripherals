@@ -207,14 +207,14 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define BTN_PA7       0        // Options: 0 / 1
     
 	#define BTN_USE_PB    1        // Options: Disable bank: 0 / Enable bank: 1
-    #define BTN_PB0       0        // Options: 0 / 1
+    #define BTN_PB0       1        // Options: 0 / 1
     #define BTN_PB1       1        // Options: 0 / 1
-    #define BTN_PB2       0        // Options: 0 / 1
-    #define BTN_PB3       0        // Options: 0 / 1
+    #define BTN_PB2       1        // Options: 0 / 1
+    #define BTN_PB3       1        // Options: 0 / 1
     #define BTN_PB4       0        // Options: 0 / 1
     #define BTN_PB5       0        // Options: 0 / 1
     #define BTN_PB6       0        // Options: 0 / 1
-    #define BTN_PB7       1        // Options: 0 / 1
+    #define BTN_PB7       0        // Options: 0 / 1
 
     #define BTN_USE_PC    0        // Options: Disable bank: 0 / Enable bank: 1
     #define BTN_PC0       0        // Options: 0 / 1
@@ -337,7 +337,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 	#define LCD_plus     0x2B
 	#define LCD_minus    0x2D
 	#define LCD_slash    0x2F
-	#define LCD_return   0x04
+	#define LCD_return   0xFC
 	#define LCD_arrow_r  0x07
 
     ///////////////////////////
