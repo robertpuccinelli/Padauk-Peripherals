@@ -6,7 +6,7 @@
 	.Code_Option	Interrupt_Src0	PA.0
 	.Code_Option	Bootup_Time	Fast
 	.Code_Option	PB4_PB7_Drive	Strong
-	.Code_Option	LVR		3.5V
+	.Code_Option	LVR		2.5V
 	.Code_Option	Security	Disable		// Security Disable
 //}}PADAUK_CODE_OPTION
 

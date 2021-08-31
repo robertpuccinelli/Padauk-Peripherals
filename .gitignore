@@ -1,3 +1,4 @@
 OBJ/
-*.TMP
-*.PDK
+PeripheralTest/PeripheralTest.TMP
+PeripheralTest/PeripheralTest.PDK
+PeripheralTest.TMP

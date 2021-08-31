@@ -2,22 +2,24 @@
 
 Basic multiplication and division functions.
 
-ROM Consumed : 210B / 0xD2
-RAM Consumed : 13B  / 0x0D
+ROM Consumed : 284B / 0x11C
+RAM Consumed : 11B  / 0x0B
 
 
 NOTE:
 
 	Function maximum run time @ 4 MHz
 
-	byte_divide   31  us
-	word_divide   101 us
-	eword_divide  167 us
+	byte_divide   28  us
+	word_divide   92  us
+	eword_divide  148 us
+	dword_divide  204 us
 
 	byte_multiply 30  us  3 us WITH MULTIPLIER
 	word_multiply 62  us  9 us WITH MULTIPLIER 
 
-	Division framework sourced from Wikipedia Division Algorithm, Long Div
+	Division framework sourced from Wikipedia Division Algorithm, Long Div.
+	Div was made more efficient by having quotient and dividend share memory.
 	Multiplication framework (non-mulop) duplicated from Padauk Code Gen
 	Multiplication framework (mulop) developed from experience
 
@@ -36,27 +38,27 @@ Copyright (c) 2021 Robert R. Puccinelli
 // VARIABLES //
 //===========//
 
-EWORD math_eword1;
-EWORD math_eword2;
-EWORD math_eword3;
-DWORD math_dword1;
+STATIC BYTE  math_byte1;
+STATIC EWORD math_eword1;
+STATIC EWORD math_eword2;
+STATIC DWORD math_dword1;
 
 
 //==================//
 // VARIABLE ALIASES //
 //==================//
 
-EWORD &math_remainder = math_eword1$0;
-EWORD &math_quotient  = math_eword2$0;
-EWORD &math_divisor   = math_eword3$0;
-EWORD &math_dividend  = math_dword1$0;
 
-WORD &math_mult_a    = math_eword1$0;
-WORD &math_mult_b    = math_eword2$0;
+DWORD &math_dividend  = math_dword1$0;
+EWORD &math_divisor   = math_eword1$0;
+EWORD &math_remainder = math_eword2$0;
+DWORD &math_quotient  = math_dividend$0;
+
+WORD &math_mult_a     = math_eword1$0;
+WORD &math_mult_b     = math_eword2$0;
 DWORD &math_product   = math_dword1$0;
 
-STATIC BYTE &counter_div  = math_dword1$3;
-STATIC BYTE &counter_mult = math_eword3$2;
+STATIC BYTE &counter = math_byte1$0;
 
 //===================//
 // PROGRAM FUNCTIONS //
@@ -64,18 +66,19 @@ STATIC BYTE &counter_mult = math_eword3$2;
 
 void byte_divide(void)
 {
-	counter_div = 8;
+	counter = 8;
 	math_remainder = 0;
-	math_quotient = 0;
 
-	if (math_dividend < math_divisor) math_remainder = math_dividend;
+	if (math_dividend < math_divisor) {
+		math_remainder = math_dividend;
+		math_quotient  = 0;
+	}
 	else
 	{
 		do 
 		{
 			sl  math_dividend$0;
 			slc math_remainder$0;
-			sl math_quotient$0;
 
 			if (math_remainder$0 >= math_divisor$0)
 			{
@@ -83,18 +86,20 @@ void byte_divide(void)
 				math_quotient  |= 0b1;
 			}
 
-		} while(--counter_div);
+		} while(--counter);
 	}
 }
 
 
 void word_divide(void)
 {
-	counter_div = 16;
+	counter = 16;
 	math_remainder = 0;
-	math_quotient = 0;
 
-	if (math_dividend < math_divisor) math_remainder = math_dividend;
+	if (math_dividend < math_divisor) {
+		math_remainder = math_dividend;
+		math_quotient  = 0;
+	}
 	else
 	{
 		do 
@@ -105,27 +110,26 @@ void word_divide(void)
 			slc math_remainder$0;
 			slc math_remainder$1;
 
-			sl  math_quotient$0;
-			slc math_quotient$1;
-
 			if (math_remainder >= math_divisor)
 			{
 				math_remainder -= math_divisor;
 				math_quotient  |= 0b1;
 			}
 
-		} while(--counter_div);
+		} while(--counter);
 	}
 }
 
 
 void eword_divide(void)
 {
-	counter_div = 24;
+	counter = 24;
 	math_remainder = 0;
-	math_quotient = 0;
 
-	if (math_dividend < math_divisor) math_remainder = math_dividend;
+	if (math_dividend < math_divisor) {
+		math_remainder = math_dividend;
+		math_quotient  = 0;
+	}
 	else
 	{
 		do 
@@ -138,23 +142,51 @@ void eword_divide(void)
 			slc math_remainder$1;
 			slc math_remainder$2;
 
-			sl  math_quotient$0;
-			slc math_quotient$1;
-			slc math_quotient$2;
-
 			if (math_remainder >= math_divisor)
 			{
 				math_remainder -= math_divisor;
 				math_quotient  |= 0b1;
 			}
 
-		} while(--counter_div);
+		} while(--counter);
 	}
 }
 
+void dword_divide(void)
+{
+	counter = 32;
+	math_remainder = 0;
+
+	if (math_dividend < math_divisor) {
+		math_remainder = math_dividend;
+		math_quotient  = 0;
+	}
+	else
+	{
+		do 
+		{
+			sl  math_dividend$0;
+			slc math_dividend$1;
+			slc math_dividend$2;
+			slc math_dividend$3;
+
+			slc math_remainder$0;
+			slc math_remainder$1;
+			slc math_remainder$2;
+
+			if (math_remainder >= math_divisor)
+			{
+				math_remainder -= math_divisor;
+				math_quotient |= 0b1;
+			}
+
+		} while(--counter);
+	}
+}
 
 void byte_multiply(void)
 {
+	math_product = 0;
 #IF HAS_MULTIPLIER
 	mulop = math_mult_a$0;
 	A = math_mult_b$0;
@@ -163,20 +195,20 @@ void byte_multiply(void)
 	math_product$1 = mulrh;
 
 #ELSE
-	counter_mult = 8;
-	math_product = 0;
+	counter = 8;
 
 	do {
 		math_mult_a$0 >>= 1;
 		if (CF)	math_product += (math_mult_b$0 << 8);
 		math_product >>= 1;
-	} while(--counter_mult);
+	} while(--counter);
 #ENDIF
 }
 
 
 void word_multiply(void)
 {
+	math_product = 0;
 #IF HAS_MULTIPLIER
 	mulop = math_mult_a$0;
 	A = math_mult_b$0;
@@ -201,13 +233,12 @@ void word_multiply(void)
 	math_product += (mulrh << 24);
 
 #ELSE
-	counter_mult = 16;
-	math_product = 0;
+	counter = 16;
 
 	do {
 		math_mult_a >>= 1;
 		if (CF) math_product += (math_mult_b << 16);
 		math_product >>>= 1;
-	} while(--counter_mult);
+	} while(--counter);
 #ENDIF
 }

@@ -46,9 +46,9 @@ EXTERN BYTE		button_enabled_a;
 EXTERN BYTE		button_enabled_b;
 EXTERN BYTE		button_enabled_c;
 
-EXTERN BYTE 	active_a;
-EXTERN BYTE 	active_b;
-EXTERN BYTE 	active_c;
+EXTERN BYTE 	button_active_a;
+EXTERN BYTE 	button_active_b;
+EXTERN BYTE 	button_active_c;
 
 
 void	Button_Initialize	    	(void);

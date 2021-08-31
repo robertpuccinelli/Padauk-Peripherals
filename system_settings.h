@@ -26,11 +26,13 @@ Copyright (c) 2021 Robert R. Puccinelli
 #ifndef SYSTEM_SETTINGS_H
 #define SYSTEM_SETTINGS_H
 
-#define SYSTEM_CLOCK   4000000   // Change to match your choice of SYSCLK in Hz
 #define IC_TARGET      PMS132    // PMS150C, PMS132, PMS134
 
-#define PERIPH_I2C_M   1         // I2C Master.    Disable: 0, Enable: 1
-#define PERIPH_PWM_11B 1         // 11B PWM.       Disable: 0, Enable: 1
+#define SYSTEM_CLOCK   4000000   // Change to match your choice of SYSCLK in Hz
+#define ICE_ILRC_HZ    34700     // ILRC clock of ICE for code validation
+
+#define PERIPH_I2C     1         // I2C Master.    Disable: 0, Enable: 1
+#define PERIPH_PWM_11B 0         // 11B PWM.       Disable: 0, Enable: 1
 #define PERIPH_BUTTON  1         // Buttons.       Disable: 0, Enable: 1
 #define PERIPH_LCD     1         // LCD.           Disable: 0, Enable: 1
 #define PERIPH_EEPROM  1         // EEPROM.        Disable: 0, Enable: 1
@@ -43,21 +45,21 @@ Copyright (c) 2021 Robert R. Puccinelli
 //
 // Use this area to track which resources are used and where
 //
-//    PA0    -             PB0    -           PC0    X
+//    PA0    STEP_EN       PB0    BTN         PC0    X
 //    PA1    X             PB1    BTN         PC1    X    
-//    PA2    X             PB2    TM2         PC2    X
-//    PA3    STEP_D        PB3    PWMG2       PC3    X
-//    PA4    STEP_S        PB4    PWMG0       PC4    X
+//    PA2    X             PB2    BTN         PC2    X
+//    PA3    STEP_S        PB3    BTN         PC3    X
+//    PA4    STEP_D        PB4    -           PC4    X
 //    PA5    -             PB5    -           PC5    X
-//    PA6    I2C_SDA       PB6    TM3         PC6    X
-//    PA7    I2C_SCL       PB7    BTN         PC7    X
+//    PA6    I2C_SDA       PB6    -           PC6    X
+//    PA7    I2C_SCL       PB7    -           PC7    X
 //
 //    TM16   -
-//    TM2    BTN
-//    TM3    -
+//    TM2    STEP
+//    TM3    BTN
 //
 //    PWMG0  -
-//    PWMG1  STEP_S
+//    PWMG1  -
 //    PWMG2  -
 //
 //    ADC    -
@@ -71,9 +73,6 @@ Copyright (c) 2021 Robert R. Puccinelli
 //============================//
 // SUPPORTED MICROCONTROLLERS //
 //============================//
-
-
-#define ICE_ILRC_HZ 34700	// ILRC clock of ICE for code validation
 
 
 #ifidni IC_TARGET, PMS150C
@@ -132,7 +131,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 //============//
 // I2C MASTER //
 //============//
-#ifidni PERIPH_I2C_M, 1
+#ifidni PERIPH_I2C, 1
     #define I2C_SDA     PA.6
     #define I2C_SCL     PA.7
     #define I2C_WR_CMD  0b0
@@ -177,13 +176,13 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define BTN_WAKE_SYS   1
 
     // Debouncer timer selection
-    #define BTN_TIMER      TM2
-    #define BTN_TIMER_CTL  TM2C
-    #define BTN_TIMER_CNT  TM2CT
-    #define BTN_TIMER_BND  TM2B
-    #define BTN_TIMER_SCL  TM2S
+    #define BTN_TIMER      TM3
+    #define BTN_TIMER_CTL  TM3C
+    #define BTN_TIMER_CNT  TM3CT
+    #define BTN_TIMER_BND  TM3B
+    #define BTN_TIMER_SCL  TM3S
     #define BTN_TIMER_CLK  ILRC // Refer to datasheet and XXX.INC for options
-
+	#define BTN_INTR       INTR_TM3
 
     // Debouncer timing settings
     #define BTN_DEBOUNCE_T  5       // ms to wait before validating button state    
@@ -208,14 +207,14 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define BTN_PA7       0        // Options: 0 / 1
     
 	#define BTN_USE_PB    1        // Options: Disable bank: 0 / Enable bank: 1
-    #define BTN_PB0       0        // Options: 0 / 1
+    #define BTN_PB0       1        // Options: 0 / 1
     #define BTN_PB1       1        // Options: 0 / 1
-    #define BTN_PB2       0        // Options: 0 / 1
-    #define BTN_PB3       0        // Options: 0 / 1
+    #define BTN_PB2       1        // Options: 0 / 1
+    #define BTN_PB3       1        // Options: 0 / 1
     #define BTN_PB4       0        // Options: 0 / 1
     #define BTN_PB5       0        // Options: 0 / 1
     #define BTN_PB6       0        // Options: 0 / 1
-    #define BTN_PB7       1        // Options: 0 / 1
+    #define BTN_PB7       0        // Options: 0 / 1
 
     #define BTN_USE_PC    0        // Options: Disable bank: 0 / Enable bank: 1
     #define BTN_PC0       0        // Options: 0 / 1
@@ -332,6 +331,14 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define LCD_eq       0x3D
     #define LCD_colon    0x3A
     #define LCD_space    0x20
+	#define LCD_para_l   0x28
+	#define LCD_para_r   0x29
+	#define LCD_star     0x2A
+	#define LCD_plus     0x2B
+	#define LCD_minus    0x2D
+	#define LCD_slash    0x2F
+	#define LCD_return   0xFC
+	#define LCD_arrow_r  0x07
 
     ///////////////////////////
     // DO NOT TOUCH -- START //
@@ -356,7 +363,7 @@ Copyright (c) 2021 Robert R. Puccinelli
         #define LCD_ENTRY_INC_DDRAM     0x02
         #define LCD_ENTRY_DEC_DDRAM     0x00
         #define LCD_ENTRY_DISP_SHIFT    0x01
-        #define LCD_ENTRY_DDRAM_SHIF    0x00
+        #define LCD_ENTRY_DDRAM_SHIFT   0x00
 
         #define LCD_DISP_F              0x08
         #define LCD_DISP_ON             0x04
@@ -431,7 +438,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 
     // INTERFACE COMPATABILITY WARNING
     #ifidni LCD_COMM_MODE, I2C
-        #ifz PERIPH_I2C_M
+        #ifz PERIPH_I2C
             .error LCD with I2C Comm Mode REQUIRES PERIPH_I2C to be enabled! 
         #endif
         #define LCD_2L_SETTINGS (LCD_FUNC_F | LCD_FUNC_2L | LCD_FUNC_HEIGHT1X)
@@ -460,7 +467,7 @@ Copyright (c) 2021 Robert R. Puccinelli
     // DO NOT TOUCH -- START //
     ///////////////////////////
     #ifidni EEPROM_COMM_MODE, I2C
-        #ifz PERIPH_I2C_M
+        #ifz PERIPH_I2C
             .error EEPROM with I2C Comm Mode REQUIRES PERIPH_I2C to be enabled! 
         #endif
     #endif
@@ -483,12 +490,12 @@ Copyright (c) 2021 Robert R. Puccinelli
 
 
 	// TIMER 2
-	#define TIMER8_2_CLK    ILRC    // ILRC, SYSCLK, other 
-	#define TIMER8_2_HZ     ILRC_HZ //ILRC_HZ, SYSTEM_CLOCK, other. ICE_ILRC_HZ for TESTING ONLY
-	#define TIMER8_2_MODE   Period  // Period, PWM
-	#define TIMER8_2_OUT    PB2     // Ex: Disable, PB2, PA3, PB4
-	#define TIMER8_2_6BIT   0       // 0: 8-bit PWM;           1: 6-bit PWM
-	#define TIMER8_2_INV    0       // 0: Out polarity normal; 1: Out polarity inverted
+	#define TIMER8_2_CLK    ILRC        // ILRC, SYSCLK, other 
+	#define TIMER8_2_HZ     ICE_ILRC_HZ // ILRC_HZ, SYSTEM_CLOCK, other. ICE_ILRC_HZ for TESTING ONLY
+	#define TIMER8_2_MODE   Period      // Period, PWM
+	#define TIMER8_2_OUT    PB2         // Ex: Disable, PB2, PA3, PB4
+	#define TIMER8_2_6BIT   0           // 0: 8-bit PWM;           1: 6-bit PWM
+	#define TIMER8_2_INV    0           // 0: Out polarity normal; 1: Out polarity inverted
 
 
 	// TIMER 3
@@ -660,25 +667,67 @@ Copyright (c) 2021 Robert R. Puccinelli
 #endif
 
 
-
 //===================//
 // STEPPER INTERFACE //
 //===================//
 
 #ifidni PERIPH_STEPPER, 1
-    #define EEPROM_COMM_MODE    I2C       // 
-    #define EEPROM_DRIVER       M24C01    //  
-    #define EEPROM_WRITE_CTL    NONE      // Pin on ~WC (ie PA.7)
-    #define EEPROM_PAGE_SIZE    16        // Page size in bytes
-    #define EEPROM_MEM_SIZE     128       // Memory size in bytes
+	#define STEPPER_PIN_EN	   PA.0
+    #define STEPPER_PIN_DIR    PA.4
+	#define STEPPER_PIN_STEP   PA3   // Must be compatible with timer source
+	#define STEPPER_ENABLE_INV 1     // Invert enable signal. 1 = Enable LOW
+	#define STEPPER_TIMER_SRC  TM2   // TM2, TM3 or PWM0 due to availability of interrupts
+
+	// NOTE:  Timer output pin, mode, AND autosolver will be overwritten
 
 
     ///////////////////////////
     // DO NOT TOUCH -- START //
     ///////////////////////////
-    #ifdifi PERIPH_PWM_11B, 1
-        .error PERIPH_STEPPER REQUIRES PERIPH_PWM_11B to be enabled! 
-    #endif
+	#ifidni     STEPPER_TIMER_SRC, TM2
+		.echo "STEPPER IS OVERWRITING TM2 SYSTEM SETTINGS" 
+		#undef  TIMER8_USE_TM2
+		#undef  TIMER8_SOLVER_ENABLE
+		#undef  TIMER8_2_OUT
+		#undef  TIMER8_2_MODE
+
+		#define TIMER8_USE_TM2       1
+		#define TIMER8_SOLVER_ENABLE 1
+		#define TIMER8_2_OUT   STEPPER_PIN_STEP
+		#define TIMER8_2_MODE  Period
+		#define STEPPER_INTR   INTR_TM2
+
+	#elseifidni STEPPER_TIMER_SRC, TM3
+		.echo "STEPPER IS OVERWRITING TM3 SYSTEM SETTINGS" 
+		#undef  TIMER8_USE_TM3
+		#undef  TIMER8_SOLVER_ENABLE
+		#undef  TIMER8_3_OUT
+		#undef  TIMER8_3_MODE
+
+		#define TIMER8_USE_TM3       1
+		#define TIMER8_SOLVER_ENABLE 1
+		#define TIMER8_3_OUT   STEPPER_PIN_STEP
+		#define TIMER8_3_MODE  Period
+		#define STEPPER_INTR   INTR_TM3
+
+	#elseifidni STEPPER_TIMER_SRC, PWM0
+		.echo "STEPPER IS OVERWRITING PWM_0 SYSTEM SETTINGS" 
+		#undef  PWM_USE_G0
+		#undef  PWM_SOLVER_ENABLE
+		#undef  PWM_0_OUTPUT
+		#undef  PWM_0_INV
+		#undef  PWM_0_INT_ZERO
+
+		#define PWM_USE_G0        1
+		#define PWM_SOLVER_ENABLE 1
+		#define PWM_0_OUTPUT   STEPPER_PIN_STEP
+		#define PWM_0_INV      0
+		#define PWM_0_INT_ZERO 0
+		#define STEPPER_INTR   INTR_PWM
+		#ifdifi PERIPH_PWM_11B, 1
+        	.error PERIPH_STEPPER REQUIRES PERIPH_PWM_11B to be enabled! 
+		#endif
+	#endif
 
     /////////////////////////
     // DO NOT TOUCH -- END //

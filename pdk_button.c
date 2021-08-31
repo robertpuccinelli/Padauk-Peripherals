@@ -14,6 +14,18 @@ Place the Button_Debounce_Interrupt function under the appropriate timer interru
 in the user program.
 
 
+LOGIC:
+
+Neg edge detector
+
+byte previous, current, active, debounce;
+
+current  = read_pins &~ debounce;
+active   = previous &~ current;
+previous = current;
+debounce = active | debounce;
+
+
 NOTE:
 
 	The bits in the port interrupt enable register are not individually addressable
@@ -54,23 +66,27 @@ BIT  button_module_initialized : button_flags.?;
 BIT	 trigger_debounce : button_flags.?;
 
 
-BYTE falling_edge_a;
-BYTE falling_edge_b;
-BYTE falling_edge_c;
+STATIC BYTE temp_byte;
 
-BYTE watchlist_a;
-BYTE watchlist_b;
-BYTE watchlist_c;
+STATIC BYTE button_debounce_a;
+STATIC BYTE button_debounce_b;
+STATIC BYTE button_debounce_c;
 
-BYTE active_a;
-BYTE active_b;
-BYTE active_c;
+STATIC BYTE &button_current_a = temp_byte;
+STATIC BYTE &button_current_b = temp_byte;
+STATIC BYTE &button_current_c = temp_byte;
+
+STATIC BYTE button_previous_a;
+STATIC BYTE button_previous_b;
+STATIC BYTE button_previous_c;
+
+BYTE button_active_a;
+BYTE button_active_b;
+BYTE button_active_c;
 
 BYTE button_enabled_a;
 BYTE button_enabled_b;
 BYTE button_enabled_c;
-
-STATIC BYTE temp_byte;
 
 // Number of counts to wait before firing debouncer interrupt
 TIMER_BOUND		=>	BTN_TIMER_FREQ / (BTN_TIMER_DIV + 1) / (1000 / BTN_DEBOUNCE_T);
@@ -105,13 +121,15 @@ void Button_Initialize(void)
 
 	// PORT A
 	#if BTN_USE_PA
-		button_enabled_a = BTN_PA;						// Grab enabled pin list
-		PAC = PAC & ~button_enabled_a;					// Set control register to input
-		PAPH = PAPH | button_enabled_a;					// Set pull high register
-		if (BTN_WAKE_SYS) PADIER = button_enabled_a;	// Set pin interrupt state if used by BTN
-		falling_edge_a = 0;								// Reset falling edge detection
-		watchlist_a = 0;								// Reset falling edge watchlist
-		active_a = 0;									// Reset active button list
+		button_enabled_a = BTN_PA;      // Grab enabled pin list
+		PAC = PAC & ~button_enabled_a;  // Set control register to input
+		PAPH = PAPH | button_enabled_a; // Set pull high register
+		#IF BTN_WAKE_SYS 
+			PADIER = button_enabled_a;  // Set pin interrupt state if used by BTN
+		#ENDIF  
+		button_debounce_a = 0;          // Reset debounce list
+		button_previous_a = 0;          // Reset previous state
+		button_active_a   = 0;          // Reset active button list
 	#endif
 
 	// PORT B
@@ -119,10 +137,12 @@ void Button_Initialize(void)
 		button_enabled_b = BTN_PB;
 		PBC = PBC & ~button_enabled_b;
 		PBPH = PBPH | button_enabled_b;
-		if (BTN_WAKE_SYS) PBDIER = button_enabled_b;
-		falling_edge_b = 0;					
-		watchlist_b = 0;
-		active_b = 0;
+		#IF BTN_WAKE_SYS 
+			PBDIER = button_enabled_b;
+		#ENDIF
+		button_debounce_b = 0;					
+		button_previous_b = 0;
+		button_active_b   = 0;
 	#endif
 
 	// PORT C
@@ -130,11 +150,13 @@ void Button_Initialize(void)
 		button_enabled_c = BTN_PC;
 		PCC = PCC & ~button_enabled_c;
 		PCPH = PCPH | button_enabled_c;
-		if (BTN_WAKE_SYS) PCDIER = button_enabled_c;
+		#IF BTN_WAKE_SYS 
+			PCDIER = button_enabled_c;
+		#ENDIF
 		button_enabled_c = BTN_PC;
-		falling_edge_c = 0;				
-		watchlist_c = 0;
-		active_c = 0;
+		button_debounce_c = 0;				
+		button_previous_c = 0;
+		button_active_c   = 0;
 	#endif
 
 	INTRQ.BTN_TIMER = 0;					// Ensure that timer interrupt is cleared
@@ -153,32 +175,32 @@ void Button_Poll(void)
 
 		// PORT A
 		#if BTN_USE_PA
-			falling_edge_a = (falling_edge_a ^ ~PA) & ~PA & button_enabled_a & BTN_PA;	// Find falling edge on enabled pins
-			if (falling_edge_a)
-			{
-				watchlist_a = watchlist_a | falling_edge_a;						// Store new edges on watchlist
-				trigger_debounce = 1;											// Flag the timer to start
-			}
+			// Debounce forces pins to be low until debounce cleared
+			// Next, buttons not enabled are set to HIGH
+			// button_active represents detection of falling edge. Cleared on next poll
+			button_current_a = (PA & ~button_debounce_a) | ~(button_enabled_a & BTN_PA);
+			button_active_a = button_previous_a &~ button_current_a;
+			button_previous_a = button_current_a;
+			button_debounce_a = button_active_a | button_debounce_a;
+			if (button_active_a) trigger_debounce = 1;
 		#endif
 
 		// PORT B
 		#if BTN_USE_PB
-			falling_edge_b = (falling_edge_b ^ ~PB) & ~PB & button_enabled_b & BTN_PB;
-			if (falling_edge_b)
-			{
-				watchlist_b = watchlist_b | falling_edge_b;
-				trigger_debounce = 1;
-			}
+			button_current_b = (PB & ~button_debounce_b) | ~(button_enabled_b & BTN_PB);
+			button_active_b = button_previous_b &~ button_current_b;
+			button_previous_b = button_current_b;
+			button_debounce_b = button_active_b | button_debounce_b;
+			if (button_active_b) trigger_debounce = 1;
 		#endif
 
 		//  PORT C
 		#if BTN_USE_PC
-			falling_edge_c = (falling_edge_c ^ ~PC) & ~PC & button_enabled_c & BTN_PC;
-			if (falling_edge_c)
-			{ 
-				watchlist_c = watchlist_c | falling_edge_c;
-				trigger_debounce = 1;
-			}
+			button_current_c = (PC & ~button_debounce_c) | ~(button_enabled_c & BTN_PC);
+			button_active_c = button_previous_c &~ button_current_c;
+			button_previous_c = button_current_c;
+			button_debounce_c = button_active_c | button_debounce_c;
+			if (button_active_c) trigger_debounce = 1;
 		#endif
 
 		if (trigger_debounce) Start_Debounce_Timer();		// Restart the debounce timer if flagged
@@ -193,24 +215,21 @@ void Button_Debounce_Interrupt(void)
 	if (button_module_initialized){
 
 		// If pins being watched are still low, mark them active
-		$ BTN_TIMER_CTL STOP;								// Stop timer
+		$ BTN_TIMER_CTL STOP;
 
 		// PORT A
 		#if BTN_USE_PA
-			temp_byte = watchlist_a & ~PA; 					// Find real button presses 
-			if (temp_byte) active_a = active_a | temp_byte;	// Add buttons to list of active callbacks
+			button_debounce_a = 0;
 		#endif
 
 		// PORT B
 		#if BTN_USE_PB
-			temp_byte = watchlist_b & ~PB;
-			if (temp_byte) active_b = active_b | temp_byte;
+			button_debounce_b = 0;
 		#endif
 
 		// PORT C
 		#if BTN_USE_PC
-			temp_byte = watchlist_c & ~PC
-			if (temp_byte) active_c = active_c | temp_byte;
+			button_debounce_c = 0;
 		#endif
 
 		INTRQ.BTN_TIMER = 0;								// Clear timer interrupt flag
@@ -227,26 +246,32 @@ void Button_Release(void)
 
 		// PORT A
 		#if BTN_USE_PA
-			button_enabled_a = BTN_PA;			// Grab original list of button pins
-			PAPH = PAPH & ~button_enabled_a;	// Set buttons to NOPULL		
-			if (BTN_WAKE_SYS) $ PBDIER 0;		// Prevent pins from waking system, if set
-			active_a = 0;						// Clear active flags
+			button_enabled_a = BTN_PA;        // Grab original list of button pins
+			PAPH = PAPH & ~button_enabled_a;  // Set buttons to NOPULL		
+			#IF BTN_WAKE_SYS 
+				$ PADIER 0;                   // Prevent pins from waking system, if set
+			#ENDIF		
+			button_active_a = 0;              // Clear active flags
 		#endif
 
 		// PORT B
 		#if BTN_USE_PB
 			button_enabled_b = BTN_PB;
 			PBPH = PBPH & ~button_enabled_b;
-			if (BTN_WAKE_SYS) $ PBDIER 0;
-			active_b = 0;					
+			#IF BTN_WAKE_SYS 
+				$ PBDIER 0;
+			#ENDIF
+			button_active_b = 0;					
 		#endif
 
 		// PORT C
 		#if BTN_USE_PC
 			button_enabled_c = BTN_PC;
 			PCPH = PCPH & ~button_enabled_c;
-			if (BTN_WAKE_SYS) $ PCDIER 0;
-			active_c = 0;					
+			#IF BTN_WAKE_SYS 
+				$ PCDIER 0;
+			#ENDIF
+			button_active_c = 0;					
 		#endif
 	
 		button_module_initialized = 0;	// Disable functions in module
