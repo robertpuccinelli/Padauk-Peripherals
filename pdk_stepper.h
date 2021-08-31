@@ -22,6 +22,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 EXTERN BIT   stepper_dir;           // Motor driver direction flag
 EXTERN BIT   stepper_dist_mode;     // Motor mode flag
 EXTERN BIT   stepper_is_moving;     // Motor status flag
+EXTERN BIT   stepper_enabled;       // Read-only enabled flag
 EXTERN EWORD stepper_units_per_run;  // Distance to travel in dist mode
 EXTERN WORD  stepper_units_per_min; // Velocity
 EXTERN WORD  stepper_units_per_rev; // Must match system configuration

@@ -30,7 +30,8 @@ Copyright (c) 2021 Robert R. Puccinelli
 BYTE       stepper_flags = 0;
 BIT        stepper_dir                : stepper_flags.?; // Motor driver direction flag
 BIT        stepper_dist_mode          : stepper_flags.?; // Motor mode flag
-BIT        stepper_is_moving          : stepper_flags.?; // Flag to report status
+BIT        stepper_is_moving          : stepper_flags.?; // Flag to report moving status
+BIT        stepper_enabled            : stepper_flags.?; // Flag to report enabled status
 STATIC BIT stepper_module_initialized : stepper_flags.?;
 STATIC BIT stepper_timer_period_state : stepper_flags.?;
 
@@ -89,6 +90,7 @@ void Stepper_Enable (void)
 	#ELSE
 		$ STEPPER_PIN_EN OUT, HIGH;
 	#ENDIF
+	stepper_enabled = 1;
 }
 
 
@@ -99,6 +101,7 @@ void Stepper_Disable (void)
 	#ELSE
 		$ STEPPER_PIN_EN OUT, LOW;
 	#ENDIF
+	stepper_enabled = 0;
 }
 
 
