@@ -25,7 +25,6 @@ Copyright (c) 2021 Robert R. Puccinelli
 BYTE	lcd_device_addr; 	// Device address. Program sets target address w/enum above.
 BYTE	lcd_trx_byte;
 BYTE	lcd_flags = 0;
-BIT		lcd_detected : lcd_flags.?;
 BIT     lcd_command  : lcd_flags.?;
 BIT		lcd_module_initialized : lcd_flags.?;
 
@@ -62,8 +61,6 @@ void	LCD_Read_Command(void)
 		I2C_Stream_Read_Byte_NAck();
 		lcd_trx_byte = i2c_buffer;
 		I2C_Stream_Stop();
-		if (i2c_slave_ack_bit == 1) lcd_detected = 0;
-		else lcd_detected = 1;
 	#endif
 }
 
@@ -146,9 +143,10 @@ void	LCD_Clear		(void)
 {
 	if ( lcd_module_initialized)
 	{
-		LCD_Delay_While_Busy();
+		lcd_command = 1;
 		lcd_trx_byte = (LCD_CLEAR_F);
-		LCD_Write_Command();
+		LCD_Write_Byte();
+		.delay LCD_Init_Delay;
 	}
 }
 
@@ -157,9 +155,9 @@ void	LCD_Home	(void)
 {
 	if ( lcd_module_initialized)
 	{
-		LCD_Delay_While_Busy();
+		lcd_command = 1;
 		lcd_trx_byte = (LCD_HOME_F);
-		LCD_Write_Command();
+		LCD_Write_Byte();
 	}
 }
 
@@ -168,9 +166,9 @@ void	LCD_Address_Set	(void)
 {
 	if ( lcd_module_initialized)
 	{
-		LCD_Delay_While_Busy();
+		lcd_command = 1;
 		lcd_trx_byte = (lcd_trx_byte | LCD_SET_DDRAM_ADDR);
-		LCD_Write_Command();
+		LCD_Write_Byte();
 	}
 }
 
@@ -189,9 +187,9 @@ void	LCD_Mode_1L		(void)
 {
 	if ( lcd_module_initialized)
 	{
-		LCD_Delay_While_Busy();
+		lcd_command = 1;
 		lcd_trx_byte = LCD_1L_SETTINGS;
-		LCD_Write_Command();
+		LCD_Write_Byte();
 	}
 }
 
@@ -200,9 +198,9 @@ void	LCD_Mode_2L		(void)
 {
 	if ( lcd_module_initialized)
 	{
-		LCD_Delay_While_Busy();
+		lcd_command = 1;
 		lcd_trx_byte = LCD_2L_SETTINGS;
-		LCD_Write_Command();
+		LCD_Write_Byte();
 	}
 }
 
@@ -211,9 +209,9 @@ void	LCD_Cursor_Shift_R (void)
 {
 	if ( lcd_module_initialized)
 	{
-		LCD_Delay_While_Busy();
+		lcd_command = 1;
 		lcd_trx_byte = (LCD_SHIFT_F | LCD_SHIFT_CURSOR_CTL | LCD_SHIFT_RIGHT);
-		LCD_Write_Command();
+		LCD_Write_Byte();
 	}
 }
 
@@ -222,9 +220,9 @@ void	LCD_Cursor_Shift_L (void)
 {
 	if ( lcd_module_initialized)
 	{
-		LCD_Delay_While_Busy();
+		lcd_command = 1;
 		lcd_trx_byte = (LCD_SHIFT_F | LCD_SHIFT_CURSOR_CTL | LCD_SHIFT_LEFT);
-		LCD_Write_Command();
+		LCD_Write_Byte();
 	}
 }
 
@@ -279,14 +277,6 @@ void	LCD_Initialize	(void)
 		#endif
 
 		lcd_module_initialized = 1;
-		LCD_Read_Command();
-
-		if (!lcd_detected)
-		{
-			lcd_module_initialized = 0;
-			I2C_Release();
-		}
-
 	}
 }
 
