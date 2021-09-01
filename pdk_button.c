@@ -124,9 +124,7 @@ void Button_Initialize(void)
 		button_enabled_a = BTN_PA;      // Grab enabled pin list
 		PAC = PAC & ~button_enabled_a;  // Set control register to input
 		PAPH = PAPH | button_enabled_a; // Set pull high register
-		#IF BTN_WAKE_SYS 
-			PADIER = button_enabled_a;  // Set pin interrupt state if used by BTN
-		#ENDIF  
+		PADIER = BTN_PA & BTN_PA_W;  // Set pin interrupt state if used by BTN
 		button_debounce_a = 0;          // Reset debounce list
 		button_previous_a = 0;          // Reset previous state
 		button_active_a   = 0;          // Reset active button list
@@ -137,9 +135,7 @@ void Button_Initialize(void)
 		button_enabled_b = BTN_PB;
 		PBC = PBC & ~button_enabled_b;
 		PBPH = PBPH | button_enabled_b;
-		#IF BTN_WAKE_SYS 
-			PBDIER = button_enabled_b;
-		#ENDIF
+		PBDIER = BTN_PB & BTN_PB_W;
 		button_debounce_b = 0;					
 		button_previous_b = 0;
 		button_active_b   = 0;
@@ -150,9 +146,7 @@ void Button_Initialize(void)
 		button_enabled_c = BTN_PC;
 		PCC = PCC & ~button_enabled_c;
 		PCPH = PCPH | button_enabled_c;
-		#IF BTN_WAKE_SYS 
-			PCDIER = button_enabled_c;
-		#ENDIF
+		PCDIER = BTN_PC & BTN_PC_W;
 		button_enabled_c = BTN_PC;
 		button_debounce_c = 0;				
 		button_previous_c = 0;
@@ -248,9 +242,7 @@ void Button_Release(void)
 		#if BTN_USE_PA
 			button_enabled_a = BTN_PA;        // Grab original list of button pins
 			PAPH = PAPH & ~button_enabled_a;  // Set buttons to NOPULL		
-			#IF BTN_WAKE_SYS 
-				$ PADIER 0;                   // Prevent pins from waking system, if set
-			#ENDIF		
+			$ PADIER 0;                   // Prevent pins from waking system, if set
 			button_active_a = 0;              // Clear active flags
 		#endif
 
@@ -258,9 +250,7 @@ void Button_Release(void)
 		#if BTN_USE_PB
 			button_enabled_b = BTN_PB;
 			PBPH = PBPH & ~button_enabled_b;
-			#IF BTN_WAKE_SYS 
-				$ PBDIER 0;
-			#ENDIF
+			$ PBDIER 0;
 			button_active_b = 0;					
 		#endif
 
@@ -268,9 +258,7 @@ void Button_Release(void)
 		#if BTN_USE_PC
 			button_enabled_c = BTN_PC;
 			PCPH = PCPH & ~button_enabled_c;
-			#IF BTN_WAKE_SYS 
-				$ PCDIER 0;
-			#ENDIF
+			$ PCDIER 0;
 			button_active_c = 0;					
 		#endif
 	
