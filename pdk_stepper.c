@@ -22,6 +22,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 #include "pdk_timer_8b.h"
 #include "pdk_pwm_11b.h"
 
+#IFIDNI PERIPH_STEPPER, 1
 
 //===========//
 // VARIABLES //
@@ -257,3 +258,5 @@ void Stepper_Release (void)
 		stepper_module_initialized = 0;
 	}
 }
+
+#ENDIF

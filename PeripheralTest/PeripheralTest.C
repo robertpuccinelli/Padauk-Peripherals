@@ -290,12 +290,12 @@ void	Interrupt (void)
 Copyright (c) 2021 Robert R. Puccinelli
 */
 #include	"../system_settings.h"
-#include	"../pdk_math.h"
+//#include	"../pdk_math.h"
 //#include	"../pdk_timer_8b.h"
 //#include	"../pdk_i2c.h"
 //#include	"../pdk_pwm_11b.h"
 //#include 	"../pdk_button.h"
-//#include 	"../pdk_lcd.h"
+#include 	"../pdk_lcd.h"
 //#include	"../pdk_eeprom.h"
 //#include	"../pdk_stepper.h"
 
@@ -303,13 +303,13 @@ void	FPPA0 (void)
 {
 	.ADJUST_IC	SYSCLK=IHRC/4, IHRC=16MHz, VDD=5V;		//	SYSCLK=IHRC/4
 
-//	ENGINT;		// Enable global interrupt
+	ENGINT;		// Enable global interrupt
 
 	//====================//
 	// MATH UTILITY CHECK //
 	//====================//
 
-
+/*
 	math_dividend = 0xFF;
 	math_divisor = 1;
 	$ PA.7 OUT, HIGH;
@@ -345,7 +345,7 @@ void	FPPA0 (void)
 	$ PA.7 HIGH;
 	word_multiply();
 	$ PA.7 LOW;
-
+*/
 
 
 
@@ -359,9 +359,9 @@ void	FPPA0 (void)
 	Timer2_Initialize();
 	timer8_target_freq = 14000; // 5ms
 	timer8_use_solver  = 1;
-	$ PA.7 OUT, HIGH;
+	$ PA.3 OUT, HIGH;
 	Timer2_Set_Parameters();
-	$ PA.7 LOW;
+	$ PA.3 LOW;
 	Timer2_Start();
 	.delay(1000000)
 	Timer2_Stop();
@@ -495,7 +495,7 @@ void	FPPA0 (void)
 //	STOPEXE;			// Place in while loop for testing
 //	Button_Poll();		// Contact pin to GND to see if wake works
 						// Breakpoint on BTN_TIMER Interrupt
-/*
+*/
 
 
 
@@ -503,7 +503,7 @@ void	FPPA0 (void)
 	// LCD FEATURE CHECK //
 	//===================//
 
-/*
+
 	lcd_device_addr = LCD_DRIVER;
 
 	LCD_Initialize();
@@ -531,7 +531,7 @@ void	FPPA0 (void)
 	LCD_Home();
 	LCD_Clear();
 	LCD_Release();
-*/
+
 
 	//======================//
 	// EEPROM FEATURE CHECK //
@@ -560,11 +560,11 @@ void	FPPA0 (void)
 	// STEPPER FEATURE CHECK //
 	//=======================//
 /*
-	stepper_units_per_rev = 230;
-	stepper_steps_per_rev = 1600;
+	stepper_units_per_rev = 20;
+	stepper_steps_per_rev = 800;
 
 	Stepper_Initialize();
-	Stepper_units_per_min = 1;
+	Stepper_units_per_min = 20;
 	Stepper_Set_Vel();
 	stepper_dir = 1;
 	Stepper_Set_Dir();
@@ -572,7 +572,7 @@ void	FPPA0 (void)
 	stepper_dist_mode = 0;
 	Stepper_Enable();
 	Stepper_Start();
-	.delay(8000000)
+	.delay(12000000)
 	Stepper_Stop();
 	Stepper_Disable();
 	Stepper_Release();
@@ -580,20 +580,19 @@ void	FPPA0 (void)
 
 	Stepper_Initialize();
 	stepper_dist_mode = 1;
-	stepper_dist_per_run = 11;
+	stepper_units_per_run = 10;
 	stepper_dir = 0;
 	Stepper_Set_Dir();
-	Stepper_units_per_min = 64400;
+	Stepper_units_per_min = 40;
 	Stepper_Set_Vel();
 	Stepper_Enable();
 	Stepper_Start();
 
-	if (!stepper_is_moving) // Place in while loop for testing of dist mode
-	{
-		Stepper_Disable();
-		Stepper_Release();
-	}
-
+//	if (!stepper_is_moving) // Place in while loop for testing of dist mode
+//	{
+//		Stepper_Disable();
+//		Stepper_Release();
+//	}
 */
 	
 	while (1)
