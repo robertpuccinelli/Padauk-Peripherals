@@ -42,10 +42,11 @@ WORD  stepper_steps_per_rev;
 STATIC WORD revs_remaining    = 0;
 STATIC WORD final_step_target = 0;
 STATIC WORD current_step      = 0;
+
 #IFIDNI STEPPER_TIMER_SRC, PWM0
-	STATIC EWORD &target_freq = pwm11_target_freq;
+	#DEFINE target_freq pwm11_target_freq
 #ELSE
-	STATIC EWORD &target_freq = timer8_target_freq;
+	#DEFINE target_freq timer8_target_freq
 #ENDIF
 
 
@@ -59,7 +60,7 @@ static void Set_Dist(void)
 	// Need to convert dist tracking to revs. Cannot multiply dist by steps per rev. Limits dist to WORD.
 	math_dividend = stepper_dist_per_run;
 	math_divisor  = stepper_units_per_rev;
-	eword_divide();
+	dword_divide();
 
 	revs_remaining = math_quotient;
 
@@ -69,7 +70,7 @@ static void Set_Dist(void)
 
 	math_dividend = math_product;
 	math_divisor = stepper_units_per_rev;
-	eword_divide();
+	dword_divide();
 
 	final_step_target = math_quotient;
 
@@ -85,7 +86,7 @@ static void Set_Dist(void)
 void Stepper_Enable (void)
 {
 	#IF STEPPER_ENABLE_INV
-		$ STEPPER_PIN_EN OUT, LOW;
+		$ PA.3 OUT, LOW;
 	#ELSE
 		$ STEPPER_PIN_EN OUT, HIGH;
 	#ENDIF
@@ -95,7 +96,7 @@ void Stepper_Enable (void)
 void Stepper_Disable (void)
 {
 	#IF STEPPER_ENABLE_INV
-		$ STEPPER_PIN_EN OUT, HIGH;
+		$ PA.3 OUT, HIGH;
 	#ELSE
 		$ STEPPER_PIN_EN OUT, LOW;
 	#ENDIF
@@ -136,19 +137,24 @@ void Stepper_Set_Vel (void)
 {
 	if (stepper_module_initialized) 
 	{
+		// WARNING
+		//
+		// units/min x steps/rev / ( 60 x units/rev) must be < 0xFFFFFF
 		math_mult_a = stepper_units_per_min;
 		math_mult_b = stepper_steps_per_rev;
 		word_multiply();
 
-		math_dividend = math_product;
 		math_divisor = 60;
-		eword_divide();
+		math_dividend = math_product;
+		dword_divide();
 
 		math_dividend = math_quotient;
 		math_divisor = stepper_units_per_rev;
-		eword_divide();
+		dword_divide();
 
 		target_freq = math_quotient;
+
+		if (!target_freq) target_freq = 1;
 
 		#IFIDNI STEPPER_TIMER_SRC, PWM0
 			pwm11_use_solver = 1;
@@ -224,7 +230,7 @@ void Stepper_Dist_Mode_Interrupt (void)
 		else stepper_timer_period_state = 1;
 	#ELSE
 		current_step++;
-		if (current_step == steps_per_rev) 
+		if (current_step == stepper_steps_per_rev) 
 		{ 
 			revs_remaining--;
 			current_step = 0 ;
@@ -248,7 +254,7 @@ void Stepper_Release (void)
 			Timer3_Release();
 		#ENDIF
 
-		$ STEPPER_PIN_EN   IN;
+		$ PA.3   IN;
 		$ STEPPER_PIN_DIR  IN;
 		$ STEPPER_PIN_STEP IN;
 		stepper_module_initialized = 0;

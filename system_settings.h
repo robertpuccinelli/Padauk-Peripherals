@@ -45,10 +45,10 @@ Copyright (c) 2021 Robert R. Puccinelli
 //
 // Use this area to track which resources are used and where
 //
-//    PA0    STEP_EN       PB0    -           PC0    X
+//    PA0    STEP_S        PB0    -           PC0    X
 //    PA1    X             PB1    BTN         PC1    X    
 //    PA2    X             PB2    TM2         PC2    X
-//    PA3    STEP_S        PB3    PWMG2       PC3    X
+//    PA3    STEP_EN       PB3    PWMG2       PC3    X
 //    PA4    STEP_D        PB4    PWMG0       PC4    X
 //    PA5    -             PB5    -           PC5    X
 //    PA6    I2C_SDA       PB6    TM3         PC6    X
@@ -58,8 +58,8 @@ Copyright (c) 2021 Robert R. Puccinelli
 //    TM2    BTN
 //    TM3    -
 //
-//    PWMG0  -
-//    PWMG1  STEP_S
+//    PWMG0  STEP_S
+//    PWMG1  -
 //    PWMG2  -
 //
 //    ADC    -
@@ -145,8 +145,8 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define T_Buf    4700
 
     // Addresses
-    #define    ST7032  0b0111110  // LCD Controller
-    #define    M24C01  0b1010000  // EEPROM, STM device 0 (can have 8 on bus) 
+    #define    ST7032  62 // 0b0111110  // LCD Controller
+    #define    M24C01  80 // 0b1010000  // EEPROM, STM device 0 (can have 8 on bus) 
 
 
     ///////////////////////////
@@ -337,7 +337,7 @@ Copyright (c) 2021 Robert R. Puccinelli
     ///////////////////////////
 
     // DRIVER INSTRUCTION CODES
-    #ifidni %LCD_DRIVER, %ST7032
+    #ifidni %LCD_DRIVER, ST7032
 
         #define LCD_RAISE_CONTROL_B     0x80
         #define LCD_LOWER_CONTROL_B     0x00
@@ -483,7 +483,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 
 	// TIMER 2
 	#define TIMER8_2_CLK    ILRC        // ILRC, SYSCLK, other 
-	#define TIMER8_2_HZ     ICE_ILRC_HZ // ILRC_HZ, SYSTEM_CLOCK, other. ICE_ILRC_HZ for TESTING ONLY
+	#define TIMER8_2_HZ     ILRC_HZ//ICE_ILRC_HZ // ILRC_HZ, SYSTEM_CLOCK, other. ICE_ILRC_HZ for TESTING ONLY
 	#define TIMER8_2_MODE   Period      // Period, PWM
 	#define TIMER8_2_OUT    PB2         // Ex: Disable, PB2, PA3, PB4
 	#define TIMER8_2_6BIT   0           // 0: 8-bit PWM;           1: 6-bit PWM
@@ -664,11 +664,12 @@ Copyright (c) 2021 Robert R. Puccinelli
 //===================//
 
 #ifidni PERIPH_STEPPER, 1
-	#define STEPPER_PIN_EN	   PA.0
-    #define STEPPER_PIN_DIR    PA.4
-	#define STEPPER_PIN_STEP   PA3   // Must be compatible with timer source
+
 	#define STEPPER_ENABLE_INV 1     // Invert enable signal. 1 = Enable LOW
-	#define STEPPER_TIMER_SRC  TM2   // TM2, TM3 or PWM0 due to availability of interrupts
+	#define STEPPER_PIN_ENABLE PA.3
+	#define STEPPER_PIN_DIR    PA.4
+	#define STEPPER_PIN_STEP   PA0   // Must be compatible with timer source
+	#define STEPPER_TIMER_SRC  PWM0  // TM2, TM3 or PWM0 due to availability of interrupts
 
 	// NOTE:  Timer output pin, mode, AND autosolver will be overwritten
 
@@ -677,7 +678,10 @@ Copyright (c) 2021 Robert R. Puccinelli
     // DO NOT TOUCH -- START //
     ///////////////////////////
 	#ifidni     STEPPER_TIMER_SRC, TM2
-		.echo "STEPPER IS OVERWRITING TM2 SYSTEM SETTINGS" 
+		#ifndef STEPPER_MSG
+			.ECHO "STEPPER IS OVERWRITING TM2 SYSTEM SETTINGS" 
+			#define STEPPER_MSG 1
+		#endif
 		#undef  TIMER8_USE_TM2
 		#undef  TIMER8_SOLVER_ENABLE
 		#undef  TIMER8_2_OUT
@@ -690,7 +694,10 @@ Copyright (c) 2021 Robert R. Puccinelli
 		#define STEPPER_INTR   INTR_TM2
 
 	#elseifidni STEPPER_TIMER_SRC, TM3
-		.echo "STEPPER IS OVERWRITING TM3 SYSTEM SETTINGS" 
+		#ifndef STEPPER_MSG
+			.ECHO "STEPPER IS OVERWRITING TM3 SYSTEM SETTINGS" 
+			#define STEPPER_MSG 1
+		#endif
 		#undef  TIMER8_USE_TM3
 		#undef  TIMER8_SOLVER_ENABLE
 		#undef  TIMER8_3_OUT
@@ -703,7 +710,10 @@ Copyright (c) 2021 Robert R. Puccinelli
 		#define STEPPER_INTR   INTR_TM3
 
 	#elseifidni STEPPER_TIMER_SRC, PWM0
-		.echo "STEPPER IS OVERWRITING PWM_0 SYSTEM SETTINGS" 
+		#ifndef STEPPER_MSG
+			.ECHO "STEPPER IS OVERWRITING PWM_0 SYSTEM SETTINGS" 
+			#define STEPPER_MSG 1
+		#endif
 		#undef  PWM_USE_G0
 		#undef  PWM_SOLVER_ENABLE
 		#undef  PWM_0_OUTPUT

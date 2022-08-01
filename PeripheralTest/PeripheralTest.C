@@ -2,7 +2,7 @@
 Copyright (c) 2021 Robert R. Puccinelli
 */
 #include	"../system_settings.h"
-#include	"../pdk_math.h"
+//#include	"../pdk_math.h"
 //#include	"../pdk_timer_8b.h"
 //#include	"../pdk_i2c.h"
 //#include	"../pdk_pwm_11b.h"
@@ -11,17 +11,18 @@ Copyright (c) 2021 Robert R. Puccinelli
 //#include	"../pdk_eeprom.h"
 //#include	"../pdk_stepper.h"
 
-void	FPPA0 (void)
+void	FPPA0 (void) : Stack = 0x10
 {
 	.ADJUST_IC	SYSCLK=IHRC/4, IHRC=16MHz, VDD=5V;		//	SYSCLK=IHRC/4
 
-//	ENGINT;		// Enable global interrupt
+	ENGINT;		// Enable global interrupt
+
 
 	//====================//
 	// MATH UTILITY CHECK //
 	//====================//
 
-
+/*
 	math_dividend = 0xFF;
 	math_divisor = 1;
 	$ PA.7 OUT, HIGH;
@@ -57,8 +58,7 @@ void	FPPA0 (void)
 	$ PA.7 HIGH;
 	word_multiply();
 	$ PA.7 LOW;
-
-
+*/
 
 
 	//========================//
@@ -109,9 +109,11 @@ void	FPPA0 (void)
 	Timer3_Release();
 */
 
+
 	//===================//
 	// I2C FEATURE CHECK //
 	//===================//
+
 /*
 	I2C_Initialize();
 
@@ -134,7 +136,6 @@ void	FPPA0 (void)
 	//=======================//
 	// 11b PWM FEATURE CHECK //
 	//=======================//
-
 
 /*
 // 	USE WITH NO AUTOSOLVER
@@ -180,13 +181,13 @@ void	FPPA0 (void)
  	PWM11_2_Release();
 */
 
+
 	//======================//
 	// BUTTON FEATURE CHECK //
 	//======================//
 
-// Enable timer interrupt in the Interrupt function
 /*
-
+	// Enable timer interrupt in the Interrupt function
 	Button_Initialize();
 	$ PB.1 OUT, HIGH	// Short PB.1 with a button input pin
 	Button_Poll();
@@ -203,12 +204,15 @@ void	FPPA0 (void)
 	.delay(100000);		//
 	Button_Release();	//
 
-	// Interrupt testing
-//	STOPEXE;			// Place in while loop for testing
-//	Button_Poll();		// Contact pin to GND to see if wake works
-						// Breakpoint on BTN_TIMER Interrupt
-/*
 
+	// Place in interrupt for testing of button debounce
+//	if (Intrq.BTN_INTR) { Button_Debounce_Interrupt(); }
+
+	
+	// Use in while loop to evaluate pin wake-up functionality. Needs in-circuit emulator.
+//	STOPEXE;			// Put IC to sleep
+//	Button_Poll();		// Contact pin to GND to see if wake works
+*/
 
 
 	//===================//
@@ -245,10 +249,10 @@ void	FPPA0 (void)
 	LCD_Release();
 */
 
+
 	//======================//
 	// EEPROM FEATURE CHECK //
 	//======================//
-
 
 /*
 	BYTE mem_buff[4];
@@ -271,8 +275,9 @@ void	FPPA0 (void)
 	//=======================//
 	// STEPPER FEATURE CHECK //
 	//=======================//
+
 /*
-	stepper_units_per_rev = 230;
+	stepper_units_per_rev = 13;
 	stepper_steps_per_rev = 1600;
 
 	Stepper_Initialize();
@@ -284,7 +289,7 @@ void	FPPA0 (void)
 	stepper_dist_mode = 0;
 	Stepper_Enable();
 	Stepper_Start();
-	.delay(8000000)
+	.delay(12000000)
 	Stepper_Stop();
 	Stepper_Disable();
 	Stepper_Release();
@@ -295,27 +300,32 @@ void	FPPA0 (void)
 	stepper_dist_per_run = 11;
 	stepper_dir = 0;
 	Stepper_Set_Dir();
-	Stepper_units_per_min = 64400;
+	Stepper_units_per_min = 6500; // 280 RPM for 230 units / rev
 	Stepper_Set_Vel();
 	Stepper_Enable();
 	Stepper_Start();
 
-	if (!stepper_is_moving) // Place in while loop for testing of dist mode
-	{
-		Stepper_Disable();
-		Stepper_Release();
-	}
+
+	// Place in while loop for testing of dist mode
+//	if (!stepper_is_moving)
+//	{
+//		Stepper_Disable();
+//		Stepper_Release();
+//	}
+
+
+	// Place in Interrupt for testing of dist mode
+//	if (Intrq.STEPPER_INTR) { Stepper_Dist_Mode_Interrupt(); }
 
 */
-	
+
+
+	//////////
+	// MAIN //
+	//////////
+
 	while (1)
 	{
-		
-//		if (!stepper_is_moving) // Place in while loop for testing of dist mode
-//		{
-//			Stepper_Disable();
-//			Stepper_Release();
-//		}
 
 		nop;
 	}
@@ -326,17 +336,6 @@ void	FPPA0 (void)
 void	Interrupt (void)
 {
 	pushaf;
-
-/*
-	if (Intrq.BTN_INTR)
-	{
-		Button_Debounce_Interrupt();
-	}
-*/
-//	if (Intrq.STEPPER_INTR)
-//	{
-//		Stepper_Dist_Mode_Interrupt();
-//	}
 
 	popaf;
 }
