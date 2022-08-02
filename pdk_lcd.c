@@ -100,7 +100,7 @@ void	LCD_Check_Busy (void)
 
 void	LCD_Delay_While_Busy (void)
 {
-	#ifdifi %LCD_DRIVER, %ST7032
+	#ifdifi %LCD_DRIVER, ST7032
 		do LCD_Check_Busy();
 		while (lcd_trx_byte && lcd_detected);
 	#else
@@ -237,7 +237,7 @@ void	LCD_Initialize	(void)
 			I2C_Initialize();
 		#endif
 
-		#ifidni %LCD_DRIVER, %ST7032
+		#ifidni %LCD_DRIVER, ST7032
 			lcd_trx_byte = LCD_INIT_FUNC1;
 			LCD_Write_Command();
 			.delay(LCD_Wait_Delay);

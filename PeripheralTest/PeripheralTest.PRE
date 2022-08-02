@@ -1,4 +1,5 @@
-.CHIP	PMS132
+
+.CHIP	PMS132B
 //{{PADAUK_CODE_OPTION
 	.Code_Option	GPC_PWM		Disable
 	.Code_Option	PWM_Source	16MHz

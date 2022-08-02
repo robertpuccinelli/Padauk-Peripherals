@@ -32,7 +32,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 #define ICE_ILRC_HZ    34700     // ILRC clock of ICE for code validation
 
 #define PERIPH_I2C     1         // I2C Master.    Disable: 0, Enable: 1
-#define PERIPH_PWM_11B 0         // 11B PWM.       Disable: 0, Enable: 1
+#define PERIPH_PWM_11B 1         // 11B PWM.       Disable: 0, Enable: 1
 #define PERIPH_BUTTON  1         // Buttons.       Disable: 0, Enable: 1
 #define PERIPH_LCD     1         // LCD.           Disable: 0, Enable: 1
 #define PERIPH_EEPROM  1         // EEPROM.        Disable: 0, Enable: 1
@@ -45,20 +45,20 @@ Copyright (c) 2021 Robert R. Puccinelli
 //
 // Use this area to track which resources are used and where
 //
-//    PA0    STEP_DIR      PB0    BTN         PC0    X
+//    PA0    STEP_S        PB0    -           PC0    X
 //    PA1    X             PB1    BTN         PC1    X    
-//    PA2    X             PB2    BTN         PC2    X
-//    PA3    STEP_S        PB3    BTN         PC3    X
-//    PA4    STEP_EN       PB4    -           PC4    X
+//    PA2    X             PB2    TM2         PC2    X
+//    PA3    STEP_EN       PB3    PWMG2       PC3    X
+//    PA4    STEP_D        PB4    PWMG0       PC4    X
 //    PA5    -             PB5    -           PC5    X
-//    PA6    I2C_SCL       PB6    -           PC6    X
-//    PA7    I2C_SDA       PB7    -           PC7    X
+//    PA6    I2C_SDA       PB6    TM3         PC6    X
+//    PA7    I2C_SCL       PB7    BTN         PC7    X
 //
 //    TM16   -
-//    TM2    STEP
-//    TM3    BTN
+//    TM2    BTN
+//    TM3    -
 //
-//    PWMG0  -
+//    PWMG0  STEP_S
 //    PWMG1  -
 //    PWMG2  -
 //
@@ -132,8 +132,8 @@ Copyright (c) 2021 Robert R. Puccinelli
 // I2C MASTER //
 //============//
 #ifidni PERIPH_I2C, 1
-    #define I2C_SDA     PA.7
-    #define I2C_SCL     PA.6
+    #define I2C_SDA     PA.6
+    #define I2C_SCL     PA.7
     #define I2C_WR_CMD  0b0
     #define I2C_RD_CMD  0b1
 
@@ -145,8 +145,8 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define T_Buf    4700
 
     // Addresses
-    #define    ST7032  0b0111110  // LCD Controller
-    #define    M24C01  0b1010000  // EEPROM, STM device 0 (can have 8 on bus) 
+    #define    ST7032  62 // 0b0111110  // LCD Controller
+    #define    M24C01  80 // 0b1010000  // EEPROM, STM device 0 (can have 8 on bus) 
 
 
     ///////////////////////////
@@ -173,15 +173,16 @@ Copyright (c) 2021 Robert R. Puccinelli
 // BUTTON INPUT //
 //==============//
 #ifidni PERIPH_BUTTON, 1
+    #define BTN_WAKE_SYS   1
 
     // Debouncer timer selection
-    #define BTN_TIMER      TM3
-    #define BTN_TIMER_CTL  TM3C
-    #define BTN_TIMER_CNT  TM3CT
-    #define BTN_TIMER_BND  TM3B
-    #define BTN_TIMER_SCL  TM3S
+    #define BTN_TIMER      TM2
+    #define BTN_TIMER_CTL  TM2C
+    #define BTN_TIMER_CNT  TM2CT
+    #define BTN_TIMER_BND  TM2B
+    #define BTN_TIMER_SCL  TM2S
     #define BTN_TIMER_CLK  ILRC // Refer to datasheet and XXX.INC for options
-	#define BTN_INTR       INTR_TM3
+	#define BTN_INTR       INTR_TM2
 
     // Debouncer timing settings
     #define BTN_DEBOUNCE_T  5       // ms to wait before validating button state    
@@ -204,34 +205,16 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define BTN_PA5       0        // Options: 0 / 1
     #define BTN_PA6       0        // Options: 0 / 1
     #define BTN_PA7       0        // Options: 0 / 1
-
-	#define BTN_PA0_W     1        // Options: 0 / 1 to use pin as wakeup
-	#define BTN_PA1_W     1
-	#define BTN_PA2_W     1
-	#define BTN_PA3_W     1
-	#define BTN_PA4_W     1
-	#define BTN_PA5_W     1
-	#define BTN_PA6_W     1
-	#define BTN_PA7_W     1
-
+    
 	#define BTN_USE_PB    1        // Options: Disable bank: 0 / Enable bank: 1
-    #define BTN_PB0       1        // Options: 0 / 1
+    #define BTN_PB0       0        // Options: 0 / 1
     #define BTN_PB1       1        // Options: 0 / 1
-    #define BTN_PB2       1        // Options: 0 / 1
-    #define BTN_PB3       1        // Options: 0 / 1
+    #define BTN_PB2       0        // Options: 0 / 1
+    #define BTN_PB3       0        // Options: 0 / 1
     #define BTN_PB4       0        // Options: 0 / 1
     #define BTN_PB5       0        // Options: 0 / 1
     #define BTN_PB6       0        // Options: 0 / 1
-    #define BTN_PB7       0        // Options: 0 / 1
-
-	#define BTN_PB0_W     1        // Options: 0 / 1 to use pin as wakeup
-	#define BTN_PB1_W     1
-	#define BTN_PB2_W     1
-	#define BTN_PB3_W     0
-	#define BTN_PB4_W     0
-	#define BTN_PB5_W     0
-	#define BTN_PB6_W     0
-	#define BTN_PB7_W     0
+    #define BTN_PB7       1        // Options: 0 / 1
 
     #define BTN_USE_PC    0        // Options: Disable bank: 0 / Enable bank: 1
     #define BTN_PC0       0        // Options: 0 / 1
@@ -243,14 +226,6 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define BTN_PC6       0        // Options: 0 / 1
     #define BTN_PC7       0        // Options: 0 / 1
 
-	#define BTN_PA0_W     1        // Options: 0 / 1 to use pin as wakeup
-	#define BTN_PA1_W     1
-	#define BTN_PA2_W     1
-	#define BTN_PA3_W     1
-	#define BTN_PA4_W     1
-	#define BTN_PA5_W     1
-	#define BTN_PA6_W     1
-	#define BTN_PA7_W     1
 
     ///////////////////////////
     // DO NOT TOUCH -- START //
@@ -266,15 +241,6 @@ Copyright (c) 2021 Robert R. Puccinelli
                          (BTN_PA1 << 1) | \
                          (BTN_PA0 << 0))
 
-        #define BTN_PA_W ((BTN_PA7_W << 7) | \
-                         (BTN_PA6_W << 6) | \
-                         (BTN_PA5_W << 5) | \
-                         (BTN_PA4_W << 4) | \
-                         (BTN_PA3_W << 3) | \
-                         (BTN_PA2_W << 2) | \
-                         (BTN_PA1_W << 1) | \
-                         (BTN_PA0_W << 0))
-
     #endif
     #if BTN_USE_PB
         #define BTN_PB   ((BTN_PB7 << 7) | \
@@ -286,15 +252,6 @@ Copyright (c) 2021 Robert R. Puccinelli
                          (BTN_PB1 << 1) | \
                          (BTN_PB0 << 0))
 
-        #define BTN_PB_W ((BTN_PB7_W << 7) | \
-                         (BTN_PB6_W << 6) | \
-                         (BTN_PB5_W << 5) | \
-                         (BTN_PB4_W << 4) | \
-                         (BTN_PB3_W << 3) | \
-                         (BTN_PB2_W << 2) | \
-                         (BTN_PB1_W << 1) | \
-                         (BTN_PB0_W << 0))
-
     #endif
     #if BTN_USE_PC
         #define BTN_PC   ((BTN_PC7 << 7) | \
@@ -305,15 +262,6 @@ Copyright (c) 2021 Robert R. Puccinelli
                          (BTN_PC2 << 2) | \
                          (BTN_PC1 << 1) | \
                          (BTN_PC0 << 0))
-
-        #define BTN_PC_W ((BTN_PC7_W << 7) | \
-                         (BTN_PC6_W << 6) | \
-                         (BTN_PC5_W << 5) | \
-                         (BTN_PC4_W << 4) | \
-                         (BTN_PC3_W << 3) | \
-                         (BTN_PC2_W << 2) | \
-                         (BTN_PC1_W << 1) | \
-                         (BTN_PC0_W << 0))
     #endif
 
     /////////////////////////
@@ -383,21 +331,13 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define LCD_eq       0x3D
     #define LCD_colon    0x3A
     #define LCD_space    0x20
-	#define LCD_para_l   0x28
-	#define LCD_para_r   0x29
-	#define LCD_star     0x2A
-	#define LCD_plus     0x2B
-	#define LCD_minus    0x2D
-	#define LCD_slash    0x2F
-	#define LCD_return   0xFC
-	#define LCD_arrow_r  0x07
 
     ///////////////////////////
     // DO NOT TOUCH -- START //
     ///////////////////////////
 
     // DRIVER INSTRUCTION CODES
-    #ifidni %LCD_DRIVER, %ST7032
+    #ifidni %LCD_DRIVER, ST7032
 
         #define LCD_RAISE_CONTROL_B     0x80
         #define LCD_LOWER_CONTROL_B     0x00
@@ -415,7 +355,7 @@ Copyright (c) 2021 Robert R. Puccinelli
         #define LCD_ENTRY_INC_DDRAM     0x02
         #define LCD_ENTRY_DEC_DDRAM     0x00
         #define LCD_ENTRY_DISP_SHIFT    0x01
-        #define LCD_ENTRY_DDRAM_SHIFT   0x00
+        #define LCD_ENTRY_DDRAM_SHIF    0x00
 
         #define LCD_DISP_F              0x08
         #define LCD_DISP_ON             0x04
@@ -543,7 +483,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 
 	// TIMER 2
 	#define TIMER8_2_CLK    ILRC        // ILRC, SYSCLK, other 
-	#define TIMER8_2_HZ     ICE_ILRC_HZ // ILRC_HZ, SYSTEM_CLOCK, other. ICE_ILRC_HZ for TESTING ONLY
+	#define TIMER8_2_HZ     ILRC_HZ//ICE_ILRC_HZ // ILRC_HZ, SYSTEM_CLOCK, other. ICE_ILRC_HZ for TESTING ONLY
 	#define TIMER8_2_MODE   Period      // Period, PWM
 	#define TIMER8_2_OUT    PB2         // Ex: Disable, PB2, PA3, PB4
 	#define TIMER8_2_6BIT   0           // 0: 8-bit PWM;           1: 6-bit PWM
@@ -724,25 +664,24 @@ Copyright (c) 2021 Robert R. Puccinelli
 //===================//
 
 #ifidni PERIPH_STEPPER, 1
-	#define STEPPER_PIN_EN	   PA.4
-	#define STEPPER_PIN_DIR    PA.0
-	#define STEPPER_PIN_STEP   PA3   // Must be compatible with timer source
+
 	#define STEPPER_ENABLE_INV 1     // Invert enable signal. 1 = Enable LOW
-	#define STEPPER_TIMER_SRC  TM2   // TM2, TM3 or PWM0 due to availability of interrupts
+	#define STEPPER_PIN_ENABLE PA.3
+	#define STEPPER_PIN_DIR    PA.4
+	#define STEPPER_PIN_STEP   PA0   // Must be compatible with timer source
+	#define STEPPER_TIMER_SRC  PWM0  // TM2, TM3 or PWM0 due to availability of interrupts
 
 	// NOTE:  Timer output pin, mode, AND autosolver will be overwritten
-
-
-	#define TIMER8_USE_TM2       1
-	#define TIMER8_USE_TM3       1
-	#define TIMER8_SOLVER_ENABLE 1  // CHECK HEADER FOR RESOURCE USAGE!
 
 
     ///////////////////////////
     // DO NOT TOUCH -- START //
     ///////////////////////////
 	#ifidni     STEPPER_TIMER_SRC, TM2
-		.echo "STEPPER IS OVERWRITING TM2 SYSTEM SETTINGS" 
+		#ifndef STEPPER_MSG
+			.ECHO "STEPPER IS OVERWRITING TM2 SYSTEM SETTINGS" 
+			#define STEPPER_MSG 1
+		#endif
 		#undef  TIMER8_USE_TM2
 		#undef  TIMER8_SOLVER_ENABLE
 		#undef  TIMER8_2_OUT
@@ -755,7 +694,10 @@ Copyright (c) 2021 Robert R. Puccinelli
 		#define STEPPER_INTR   INTR_TM2
 
 	#elseifidni STEPPER_TIMER_SRC, TM3
-		.echo "STEPPER IS OVERWRITING TM3 SYSTEM SETTINGS" 
+		#ifndef STEPPER_MSG
+			.ECHO "STEPPER IS OVERWRITING TM3 SYSTEM SETTINGS" 
+			#define STEPPER_MSG 1
+		#endif
 		#undef  TIMER8_USE_TM3
 		#undef  TIMER8_SOLVER_ENABLE
 		#undef  TIMER8_3_OUT
@@ -768,7 +710,10 @@ Copyright (c) 2021 Robert R. Puccinelli
 		#define STEPPER_INTR   INTR_TM3
 
 	#elseifidni STEPPER_TIMER_SRC, PWM0
-		.echo "STEPPER IS OVERWRITING PWM_0 SYSTEM SETTINGS" 
+		#ifndef STEPPER_MSG
+			.ECHO "STEPPER IS OVERWRITING PWM_0 SYSTEM SETTINGS" 
+			#define STEPPER_MSG 1
+		#endif
 		#undef  PWM_USE_G0
 		#undef  PWM_SOLVER_ENABLE
 		#undef  PWM_0_OUTPUT
@@ -781,10 +726,12 @@ Copyright (c) 2021 Robert R. Puccinelli
 		#define PWM_0_INV      0
 		#define PWM_0_INT_ZERO 0
 		#define STEPPER_INTR   INTR_PWM
-		#ifdifi PERIPH_PWM_11B, 1
-		.error PERIPH_STEPPER REQUIRES PERIPH_PWM_11B to be enabled! 
-		#endif
 	#endif
+
+
+    #ifdifi PERIPH_PWM_11B, 1
+        .error PERIPH_STEPPER REQUIRES PERIPH_PWM_11B to be enabled! 
+    #endif
 
     /////////////////////////
     // DO NOT TOUCH -- END //
