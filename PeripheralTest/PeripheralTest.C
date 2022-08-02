@@ -11,7 +11,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 //#include	"../pdk_eeprom.h"
 //#include	"../pdk_stepper.h"
 
-void	FPPA0 (void) : Stack = 0x10
+void	FPPA0 (void)
 {
 	.ADJUST_IC	SYSCLK=IHRC/4, IHRC=16MHz, VDD=5V;		//	SYSCLK=IHRC/4
 
