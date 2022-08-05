@@ -36,6 +36,8 @@ Copyright (c) 2021 Robert R. Puccinelli
 */
 
 #include "system_settings.h"
+
+#IFIDNI PERIPH_TIMER8, 1
 #include "pdk_math.h"
 
 
@@ -364,3 +366,4 @@ void Timer3_Release(void)
 
 #ENDIF // TIMER8_USE_TM3
 
+#ENDIF // PERIPH_TIMER8

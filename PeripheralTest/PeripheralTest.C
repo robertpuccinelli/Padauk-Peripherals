@@ -67,7 +67,6 @@ void	FPPA0 (void)
 
 /*
 	// Period solver test
-
 	Timer2_Initialize();
 	timer8_target_freq = 14000; // 5ms
 	timer8_use_solver  = 1;
@@ -81,7 +80,6 @@ void	FPPA0 (void)
 
 
 	// PWM solver test
-	
 	Timer3_Initialize();
 	timer8_target_freq = 20; // 50ms
 	timer8_duty_percent = 33;
@@ -95,7 +93,6 @@ void	FPPA0 (void)
 	Timer3_Release();
 
 	// Solver-free memory check
-
 	Timer2_Initialize();
 	Timer2_Set_Parameters();
 	Timer2_Start();
@@ -297,7 +294,7 @@ void	FPPA0 (void)
 
 	Stepper_Initialize();
 	stepper_dist_mode = 1;
-	stepper_dist_per_run = 11;
+	stepper_units_per_run = 11;
 	stepper_dir = 0;
 	Stepper_Set_Dir();
 	Stepper_units_per_min = 6500; // 280 RPM for 230 units / rev
@@ -305,19 +302,18 @@ void	FPPA0 (void)
 	Stepper_Enable();
 	Stepper_Start();
 
-
 	// Place in while loop for testing of dist mode
-//	if (!stepper_is_moving)
-//	{
-//		Stepper_Disable();
-//		Stepper_Release();
-//	}
+	if (!stepper_is_moving)
+	{
+		Stepper_Disable();
+		Stepper_Release();
+	}
 
 
 	// Place in Interrupt for testing of dist mode
 //	if (Intrq.STEPPER_INTR) { Stepper_Dist_Mode_Interrupt(); }
-
 */
+
 
 
 	//////////
@@ -326,7 +322,6 @@ void	FPPA0 (void)
 
 	while (1)
 	{
-
 		nop;
 	}
 
@@ -335,7 +330,7 @@ void	FPPA0 (void)
 
 void	Interrupt (void)
 {
-	pushaf;
-
+	pushaf
+	// Interrupts go here
 	popaf;
 }

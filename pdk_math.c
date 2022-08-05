@@ -34,6 +34,8 @@ Copyright (c) 2021 Robert R. Puccinelli
 
 #include "system_settings.h"
 
+#IF PERIPH_MATH
+
 //===========//
 // VARIABLES //
 //===========//
@@ -242,3 +244,5 @@ void word_multiply(void)
 	} while(--counter);
 #ENDIF
 }
+
+#ENDIF // PERIPH_MATH

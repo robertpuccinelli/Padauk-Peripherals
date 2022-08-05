@@ -44,15 +44,10 @@ EXTERN WORD	timer8_scalar;     // 5-bit  [0 : 31]
 EXTERN WORD	timer8_bound;      // 8-bit bound register
 
 
-// SOLVER VARIABLES
-
-#IF TIMER8_SOLVER_ENABLE
-
+// SOLVER VARIABLES - ONLY AVAILABLE WHEN TIMER8_SOLVER_ENABLE IS SET TO 1
 EXTERN BIT    timer8_use_solver;   // Flag to select parameter solver
 EXTERN BYTE  &timer8_duty_percent; // Duty [0 : 100]
 EXTERN EWORD &timer8_target_freq;  // Target PWM Hz
-
-#ENDIF
 
 
 //===================//

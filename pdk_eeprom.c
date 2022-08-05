@@ -23,6 +23,8 @@ Copyright (c) 2021 Robert R. Puccinelli
 */
 
 #include "system_settings.h"
+
+#IF PERIPH_EEPROM
 #include "pdk_i2c.h"
 
 //===========//
@@ -164,3 +166,5 @@ void EEPROM_Write (void)
 		}
 	}
 }
+
+#ENDIF // PERIPH_EEPROM

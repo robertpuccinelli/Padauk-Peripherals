@@ -90,9 +90,9 @@ Licensees cannot remove copyright notices.
 Copyright (c) 2021 Robert R. Puccinelli
 */
 
-#IFIDNI PERIPH_PWM_11B, 1
-
 #include "system_settings.h"
+
+#IF PERIPH_PWM_11B
 #include "pdk_math.h"
 
 // 11-bit PWM Required
@@ -413,4 +413,4 @@ void PWM11_2_Release (void)
 	}
 }
 
-#ENDIF \\PERIPH_PWM_11B
+#ENDIF \\ PERIPH_PWM_11B

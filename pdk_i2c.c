@@ -21,6 +21,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 
 #include "system_settings.h"
 
+#IF PERIPH_I2C
 
 //======================//
 // VARIABLES AND MACROS //
@@ -247,3 +248,5 @@ void I2C_Stream_Stop (void)
 {
 	if (i2c_module_initialized) I2C_Stop(); // I2C stop condition
 }
+
+#ENDIF // PERIPH_I2C

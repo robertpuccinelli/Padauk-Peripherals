@@ -14,15 +14,16 @@ Licensees cannot remove copyright notices.
 Copyright (c) 2021 Robert R. Puccinelli
 */
 
-
 #include "system_settings.h"
+
+#IF PERIPH_LCD
 #include "pdk_i2c.h"
 
 //===========//
 // VARIABLES //
 //===========//
 
-BYTE	lcd_device_addr; 	// Device address. Program sets target address w/enum above.
+BYTE	lcd_device_addr; 	// Program sets target device address.
 BYTE	lcd_trx_byte;
 BYTE	lcd_flags = 0;
 BIT     lcd_command  : lcd_flags.?;
@@ -289,3 +290,5 @@ void	LCD_Release		(void)
 		lcd_module_initialized = 0;
 	}
 }
+
+#ENDIF // PERIPH_LCD

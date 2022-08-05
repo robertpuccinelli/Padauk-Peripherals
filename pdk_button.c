@@ -56,6 +56,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 
 #include "system_settings.h"
 
+#IF PERIPH_BUTTON
 
 //======================//
 // VARIABLES AND MACROS //
@@ -265,3 +266,5 @@ void Button_Release(void)
 		button_module_initialized = 0;	// Disable functions in module
 	}
 }
+
+#ENDIF // PERIPH_BUTTON

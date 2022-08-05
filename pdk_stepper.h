@@ -1,10 +1,13 @@
-/* pdk_step_dir.h
+/* pdk_stepper.h
    
 Stepper driver utility declarations. 
 Define PERIPH_STEP_DIR in system_settings.h
 
-ROM Consumed : ?
-RAM Consumed : ?
+ROM Consumed : 639B / 0x27F - 8b TIMER
+RAM Consumed :  51B / 0x033 - 8b TIMER
+
+ROM Consumed : 728B / 0x2D8 - 11b PWM TIMER
+RAM Consumed :  57B / 0x039 - 11b PWM TIMER
 
 
 This software is licensed under GPLv3 <http://www.gnu.org/licenses/>.

@@ -31,13 +31,14 @@ Copyright (c) 2021 Robert R. Puccinelli
 #define SYSTEM_CLOCK   4000000   // Change to match your choice of SYSCLK in Hz
 #define ICE_ILRC_HZ    34700     // ILRC clock of ICE for code validation
 
-#define PERIPH_I2C     1         // I2C Master.    Disable: 0, Enable: 1
-#define PERIPH_PWM_11B 1         // 11B PWM.       Disable: 0, Enable: 1
-#define PERIPH_BUTTON  1         // Buttons.       Disable: 0, Enable: 1
-#define PERIPH_LCD     1         // LCD.           Disable: 0, Enable: 1
-#define PERIPH_EEPROM  1         // EEPROM.        Disable: 0, Enable: 1
-#define PERIPH_STEPPER 1         // Stepper motor. Disable: 0, Enable: 1
-#define PERIPH_TIMER8  1 
+#define PERIPH_MATH    0         // Math utility.  Disable: 0, Enable: 1
+#define PERIPH_I2C     0         // I2C Master.    Disable: 0, Enable: 1
+#define PERIPH_PWM_11B 0         // 11B PWM.       Disable: 0, Enable: 1
+#define PERIPH_BUTTON  0         // Buttons.       Disable: 0, Enable: 1
+#define PERIPH_LCD     0         // LCD.           Disable: 0, Enable: 1
+#define PERIPH_EEPROM  0         // EEPROM.        Disable: 0, Enable: 1
+#define PERIPH_STEPPER 0         // Stepper motor. Disable: 0, Enable: 1
+#define PERIPH_TIMER8  0 
 
 //======================//
 // RESOURCE UTILIZATION //
@@ -205,6 +206,15 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define BTN_PA5       0        // Options: 0 / 1
     #define BTN_PA6       0        // Options: 0 / 1
     #define BTN_PA7       0        // Options: 0 / 1
+
+	#define BTN_PA0_W     1        // Options: 0 / 1 to use pin as wakeup
+	#define BTN_PA1_W     1
+	#define BTN_PA2_W     1
+	#define BTN_PA3_W     1
+	#define BTN_PA4_W     1
+	#define BTN_PA5_W     1
+	#define BTN_PA6_W     1
+	#define BTN_PA7_W     1
     
 	#define BTN_USE_PB    1        // Options: Disable bank: 0 / Enable bank: 1
     #define BTN_PB0       0        // Options: 0 / 1
@@ -216,7 +226,16 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define BTN_PB6       0        // Options: 0 / 1
     #define BTN_PB7       1        // Options: 0 / 1
 
-    #define BTN_USE_PC    0        // Options: Disable bank: 0 / Enable bank: 1
+	#define BTN_PB0_W     1        // Options: 0 / 1 to use pin as wakeup
+	#define BTN_PB1_W     1
+	#define BTN_PB2_W     1
+	#define BTN_PB3_W     0
+	#define BTN_PB4_W     0
+	#define BTN_PB5_W     0
+	#define BTN_PB6_W     0
+	#define BTN_PB7_W     0
+
+	#define BTN_USE_PC    0        // Options: Disable bank: 0 / Enable bank: 1
     #define BTN_PC0       0        // Options: 0 / 1
     #define BTN_PC1       0        // Options: 0 / 1
     #define BTN_PC2       0        // Options: 0 / 1
@@ -226,6 +245,14 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define BTN_PC6       0        // Options: 0 / 1
     #define BTN_PC7       0        // Options: 0 / 1
 
+	#define BTN_PC0_W     1        // Options: 0 / 1 to use pin as wakeup
+	#define BTN_PC1_W     1
+	#define BTN_PC2_W     1
+	#define BTN_PC3_W     1
+	#define BTN_PC4_W     1
+	#define BTN_PC5_W     1
+	#define BTN_PC6_W     1
+	#define BTN_PC7_W     1
 
     ///////////////////////////
     // DO NOT TOUCH -- START //
@@ -241,6 +268,15 @@ Copyright (c) 2021 Robert R. Puccinelli
                          (BTN_PA1 << 1) | \
                          (BTN_PA0 << 0))
 
+        #define BTN_PA_W ((BTN_PA7_W << 7) | \
+                         (BTN_PA6_W << 6) | \
+                         (BTN_PA5_W << 5) | \
+                         (BTN_PA4_W << 4) | \
+                         (BTN_PA3_W << 3) | \
+                         (BTN_PA2_W << 2) | \
+                         (BTN_PA1_W << 1) | \
+                         (BTN_PA0_W << 0))
+
     #endif
     #if BTN_USE_PB
         #define BTN_PB   ((BTN_PB7 << 7) | \
@@ -252,6 +288,15 @@ Copyright (c) 2021 Robert R. Puccinelli
                          (BTN_PB1 << 1) | \
                          (BTN_PB0 << 0))
 
+        #define BTN_PB_W ((BTN_PB7_W << 7) | \
+                         (BTN_PB6_W << 6) | \
+                         (BTN_PB5_W << 5) | \
+                         (BTN_PB4_W << 4) | \
+                         (BTN_PB3_W << 3) | \
+                         (BTN_PB2_W << 2) | \
+                         (BTN_PB1_W << 1) | \
+                         (BTN_PB0_W << 0))
+
     #endif
     #if BTN_USE_PC
         #define BTN_PC   ((BTN_PC7 << 7) | \
@@ -262,6 +307,15 @@ Copyright (c) 2021 Robert R. Puccinelli
                          (BTN_PC2 << 2) | \
                          (BTN_PC1 << 1) | \
                          (BTN_PC0 << 0))
+
+        #define BTN_PC_W ((BTN_PC7_W << 7) | \
+                         (BTN_PC6_W << 6) | \
+                         (BTN_PC5_W << 5) | \
+                         (BTN_PC4_W << 4) | \
+                         (BTN_PC3_W << 3) | \
+                         (BTN_PC2_W << 2) | \
+                         (BTN_PC1_W << 1) | \
+                         (BTN_PC0_W << 0))
     #endif
 
     /////////////////////////
@@ -665,23 +719,20 @@ Copyright (c) 2021 Robert R. Puccinelli
 
 #ifidni PERIPH_STEPPER, 1
 
+	// NOTE: STEPPER WILL OVERWRITE THE TM2, TM3, OR PWM0 SETTINGS ABOVE!!
+	//       Timer output pin, mode, AND autosolver will be overwritten
+
 	#define STEPPER_ENABLE_INV 1     // Invert enable signal. 1 = Enable LOW
 	#define STEPPER_PIN_ENABLE PA.3
 	#define STEPPER_PIN_DIR    PA.4
 	#define STEPPER_PIN_STEP   PA0   // Must be compatible with timer source
 	#define STEPPER_TIMER_SRC  PWM0  // TM2, TM3 or PWM0 due to availability of interrupts
 
-	// NOTE:  Timer output pin, mode, AND autosolver will be overwritten
-
 
     ///////////////////////////
     // DO NOT TOUCH -- START //
     ///////////////////////////
 	#ifidni     STEPPER_TIMER_SRC, TM2
-		#ifndef STEPPER_MSG
-			.ECHO "STEPPER IS OVERWRITING TM2 SYSTEM SETTINGS" 
-			#define STEPPER_MSG 1
-		#endif
 		#undef  TIMER8_USE_TM2
 		#undef  TIMER8_SOLVER_ENABLE
 		#undef  TIMER8_2_OUT
@@ -693,11 +744,11 @@ Copyright (c) 2021 Robert R. Puccinelli
 		#define TIMER8_2_MODE  Period
 		#define STEPPER_INTR   INTR_TM2
 
+		#ifz PERIPH_TIMER8
+        	.error PERIPH_STEPPER requires PERIPH_TIMER8 to be enabled! 
+    	#endif
+
 	#elseifidni STEPPER_TIMER_SRC, TM3
-		#ifndef STEPPER_MSG
-			.ECHO "STEPPER IS OVERWRITING TM3 SYSTEM SETTINGS" 
-			#define STEPPER_MSG 1
-		#endif
 		#undef  TIMER8_USE_TM3
 		#undef  TIMER8_SOLVER_ENABLE
 		#undef  TIMER8_3_OUT
@@ -709,11 +760,11 @@ Copyright (c) 2021 Robert R. Puccinelli
 		#define TIMER8_3_MODE  Period
 		#define STEPPER_INTR   INTR_TM3
 
+		#ifz PERIPH_TIMER8
+        	.error PERIPH_STEPPER requires PERIPH_TIMER8 to be enabled! 
+    	#endif
+
 	#elseifidni STEPPER_TIMER_SRC, PWM0
-		#ifndef STEPPER_MSG
-			.ECHO "STEPPER IS OVERWRITING PWM_0 SYSTEM SETTINGS" 
-			#define STEPPER_MSG 1
-		#endif
 		#undef  PWM_USE_G0
 		#undef  PWM_SOLVER_ENABLE
 		#undef  PWM_0_OUTPUT
@@ -726,12 +777,17 @@ Copyright (c) 2021 Robert R. Puccinelli
 		#define PWM_0_INV      0
 		#define PWM_0_INT_ZERO 0
 		#define STEPPER_INTR   INTR_PWM
+
+		#ifz PERIPH_PWM_11B
+        	.error PERIPH_STEPPER requires PERIPH_PWM_11B to be enabled! 
+    	#endif
 	#endif
 
+	#ifz PERIPH_MATH
+		.error PERIPH_STEPPER requires PERIPH_MATH to be enabled!
+	#endif
 
-    #ifdifi PERIPH_PWM_11B, 1
-        .error PERIPH_STEPPER REQUIRES PERIPH_PWM_11B to be enabled! 
-    #endif
+//#ifdifi PERIPH_MATH, 1
 
     /////////////////////////
     // DO NOT TOUCH -- END //
