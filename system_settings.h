@@ -31,13 +31,13 @@ Copyright (c) 2021 Robert R. Puccinelli
 #define SYSTEM_CLOCK   4000000   // Change to match your choice of SYSCLK in Hz
 #define ICE_ILRC_HZ    34700     // ILRC clock of ICE for code validation
 
-#define PERIPH_MATH    0         // Math utility.  Disable: 0, Enable: 1
-#define PERIPH_I2C     0         // I2C Master.    Disable: 0, Enable: 1
-#define PERIPH_PWM_11B 0         // 11B PWM.       Disable: 0, Enable: 1
-#define PERIPH_BUTTON  0         // Buttons.       Disable: 0, Enable: 1
-#define PERIPH_LCD     0         // LCD.           Disable: 0, Enable: 1
-#define PERIPH_EEPROM  0         // EEPROM.        Disable: 0, Enable: 1
-#define PERIPH_STEPPER 0         // Stepper motor. Disable: 0, Enable: 1
+#define PERIPH_MATH    1         // Math utility.  Disable: 0, Enable: 1
+#define PERIPH_I2C     1         // I2C Master.    Disable: 0, Enable: 1
+#define PERIPH_PWM_11B 1         // 11B PWM.       Disable: 0, Enable: 1
+#define PERIPH_BUTTON  1         // Buttons.       Disable: 0, Enable: 1
+#define PERIPH_LCD     1         // LCD.           Disable: 0, Enable: 1
+#define PERIPH_EEPROM  1         // EEPROM.        Disable: 0, Enable: 1
+#define PERIPH_STEPPER 1         // Stepper motor. Disable: 0, Enable: 1
 #define PERIPH_TIMER8  0 
 
 //======================//
@@ -46,14 +46,14 @@ Copyright (c) 2021 Robert R. Puccinelli
 //
 // Use this area to track which resources are used and where
 //
-//    PA0    STEP_S        PB0    -           PC0    X
-//    PA1    X             PB1    BTN         PC1    X    
-//    PA2    X             PB2    TM2         PC2    X
-//    PA3    STEP_EN       PB3    PWMG2       PC3    X
-//    PA4    STEP_D        PB4    PWMG0       PC4    X
+//    PA0    STEP_DIR      PB0    BTN_ROT1    PC0    X
+//    PA1    X             PB1    BTN_START   PC1    X    
+//    PA2    X             PB2    BTN_ROT2    PC2    X
+//    PA3    STEP_S        PB3    BTN_SEL     PC3    X
+//    PA4    STEP_EN       PB4    -           PC4    X
 //    PA5    -             PB5    -           PC5    X
-//    PA6    I2C_SDA       PB6    TM3         PC6    X
-//    PA7    I2C_SCL       PB7    BTN         PC7    X
+//    PA6    I2C_SCL       PB6    -           PC6    X
+//    PA7    I2C_SDA       PB7    -           PC7    X
 //
 //    TM16   -
 //    TM2    BTN
@@ -385,6 +385,15 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define LCD_eq       0x3D
     #define LCD_colon    0x3A
     #define LCD_space    0x20
+    #define LCD_para_l   0x28
+    #define LCD_para_r   0x29
+    #define LCD_star     0x2A
+    #define LCD_plus     0x2B
+    #define LCD_minus    0x2D
+    #define LCD_slash    0x2F
+    #define LCD_return   0xFC
+    #define LCD_arrow_r  0x07
+
 
     ///////////////////////////
     // DO NOT TOUCH -- START //
@@ -409,7 +418,7 @@ Copyright (c) 2021 Robert R. Puccinelli
         #define LCD_ENTRY_INC_DDRAM     0x02
         #define LCD_ENTRY_DEC_DDRAM     0x00
         #define LCD_ENTRY_DISP_SHIFT    0x01
-        #define LCD_ENTRY_DDRAM_SHIF    0x00
+        #define LCD_ENTRY_DDRAM_SHIFT   0x00
 
         #define LCD_DISP_F              0x08
         #define LCD_DISP_ON             0x04
@@ -723,7 +732,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 	//       Timer output pin, mode, AND autosolver will be overwritten
 
 	#define STEPPER_ENABLE_INV 1     // Invert enable signal. 1 = Enable LOW
-	#define STEPPER_PIN_ENABLE PA.3
+	#define STEPPER_PIN_EN     PA.3
 	#define STEPPER_PIN_DIR    PA.4
 	#define STEPPER_PIN_STEP   PA0   // Must be compatible with timer source
 	#define STEPPER_TIMER_SRC  PWM0  // TM2, TM3 or PWM0 due to availability of interrupts

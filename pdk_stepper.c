@@ -64,7 +64,7 @@ static void Set_Dist(void)
 	// Need to convert dist tracking to revs. Cannot multiply dist by steps per rev. Limits dist to WORD.
 	math_dividend = stepper_units_per_run;
 	math_divisor  = stepper_units_per_rev;
-	dword_divide();
+	eword_divide();
 
 	revs_remaining = math_quotient;
 
@@ -74,7 +74,7 @@ static void Set_Dist(void)
 
 	math_dividend = math_product;
 	math_divisor = stepper_units_per_rev;
-	dword_divide();
+	eword_divide();
 
 	final_step_target = math_quotient;
 
@@ -90,7 +90,7 @@ static void Set_Dist(void)
 void Stepper_Enable (void)
 {
 	#IF STEPPER_ENABLE_INV
-		$ PA.3 OUT, LOW;
+		$ STEPPER_PIN_EN OUT, LOW;
 	#ELSE
 		$ STEPPER_PIN_EN OUT, HIGH;
 	#ENDIF
@@ -152,11 +152,11 @@ void Stepper_Set_Vel (void)
 
 		math_divisor = 60;
 		math_dividend = math_product;
-		dword_divide();
+		eword_divide();
 
 		math_dividend = math_quotient;
 		math_divisor = stepper_units_per_rev;
-		dword_divide();
+		eword_divide();
 
 		target_freq = math_quotient;
 
@@ -260,7 +260,7 @@ void Stepper_Release (void)
 			Timer3_Release();
 		#ENDIF
 
-		$ PA.3   IN;
+		$ STEPPER_PIN_EN   IN;
 		$ STEPPER_PIN_DIR  IN;
 		$ STEPPER_PIN_STEP IN;
 		stepper_module_initialized = 0;
