@@ -1,4 +1,4 @@
-/* pdk_i2c.c
+﻿/* pdk_i2c.c
    
 I2C utilities based off of the PADAUK IDE v0.91 Code Generator. 
 Define PERIPH_I2C in system_settings.h
@@ -7,16 +7,38 @@ In the communication protocol provided here, the MSB is Tx/Rx first.
 Timings are configured for 100kHz with system_settings.h. Higher may
 be achievable, but it is currently untested.
 
-ROM Consumed : 197B / 0xC5
-RAM Consumed :  12B / 0x0C
+Basic with 2B buffer
+ROM Consumed : 142B / 0x8E
+RAM Consumed :  15B / 0x0F
 
+
+Basic and Standard with 3B buffer
+ROM Consumed : 169B / 0xA9
+RAM Consumed :  16B / 0x10
+
+
+All functions with 5B buffer
+ROM Consumed : 223B / 0xDF
+RAM Consumed :  18B / 0x12
+
+
+NOTES:
+	Devices can be configured for handling I2C data in different ways,
+	so set I2C_BUFF_SIZE accordingly in system_settings.h. When using
+	sequential read/write calls, set the 2nd to last byte to be the 
+	number of bytes to process in the read/write action.
+	
+	Buffer size examples:
+		[2] - Dev Addr, Data (Basic device, see Freetronics Relay8)
+		[3] - Dev Addr, Data, Reg Addr (Standard single byte action)
+		[5] - Dev Addr, Data1, Data2, Length, Reg Addr (Multi byte action)
 
 This software is licensed under GPLv3 <http://www.gnu.org/licenses/>.
 Any modifications or distributions have to be licensed under GPLv3.
 No warranty of any kind and copyright holders cannot be held liable.
 Licensees cannot remove copyright notices.
 
-Copyright (c) 2021 Robert R. Puccinelli
+Copyright (c) 2023 Robert R. Puccinelli
 */
 
 #include "system_settings.h"
@@ -27,14 +49,24 @@ Copyright (c) 2021 Robert R. Puccinelli
 // VARIABLES AND MACROS //
 //======================//
 
-BYTE i2c_device;		          // 7-bit slave address.
-BYTE i2c_buffer;		          // Pointer to Tx/Rx byte. 
-BYTE i2c_num_initializations = 0; // Number of initializations
+BYTE i2c_buffer[I2C_BUFF_SIZE] = 0;						// I2C buffer array
+WORD i2c_p_data;
+i2c_p_data = &i2c_buffer[0];	// Pointer to current data byte
+
+// Aliases for elements in buffer array, does not use memory
+
+// !! CANNOT USE ALIASES IN PROGRAM IF DEFINED IN .C FILE !! //
+// DEFINITIONS LEFT HERE TO HELP TRANSLATE SOURCE CODE //
+
+//BYTE & i2c_dev_addr				= i2c_buffer[0];			// Element of array for all ops
+//BYTE & i2c_reg_addr				= i2c_buffer[I2C_BUFF_END];	// Element of array for random ops
+//BYTE & i2c_read_len				= i2c_buffer[I2C_BUFF_REG];	// Sequential read parameter
+//BYTE & i2c_write_len				= i2c_read_len;				// Sequential write parameter
+BYTE & i2c_data_0					= i2c_buffer[1];			// Element of array for all ops 
+BYTE & i2c_data_n					= i2c_buffer[I2C_DATA_END];	// Element of array for sequential r/w
 
 BYTE i2c_flags = 0;
 BIT  i2c_slave_ack_bit : i2c_flags.?;       // Slave acknowledge bit
-BIT  i2c_module_initialized : i2c_flags.?;  // Module function blocking flag
-
 
 
 // Delay cycles
@@ -80,9 +112,7 @@ static void I2C_Tx_Bit (void)
 static void I2C_Tx_ACC (void)
 {
 	.REPEAT 8
-		A = i2c_buffer;  // Transfer buffer contents to ACC
 		I2C_Tx_Bit();
-		i2c_buffer <<= 1;
 	.ENDM
 }
 
@@ -92,13 +122,13 @@ static void I2C_Rx_Bit (void)
 	Easy_Delay (Delay_Low, 4)
 	$ I2C_SCL High;
 	swapc I2C_SDA;
-	slc i2c_buffer;
+	slc A;
 	Easy_Delay (Delay_High, 2)
 	$ I2C_SCL Low;
 }
 
 
-static void I2C_Rx_Acc (void)
+static void I2C_Rx_ACC (void)
 {
 	$ I2C_SDA In;
 	.REPEAT 8
@@ -107,14 +137,7 @@ static void I2C_Rx_Acc (void)
 }
 
 
-static void I2C_Read (void)
-{
-	i2c_buffer = 0;
-	I2C_Rx_ACC();
-}
-
-
-static void I2C_Provide_Ack (void)
+static void I2C_Tx_Ack (void)
 {
 	$ I2C_SDA Out, Low;
 	Easy_Delay (Delay_Low, 2);
@@ -124,7 +147,7 @@ static void I2C_Provide_Ack (void)
 }
 
 
-static void I2C_Provide_NAck (void)
+static void I2C_Tx_NAck (void)
 {
 	$ I2C_SDA Out, High;
 	Easy_Delay (Delay_Low, 2);
@@ -134,7 +157,7 @@ static void I2C_Provide_NAck (void)
 }
 
 
-static void I2C_Listen_Ack (void)
+static void I2C_Rx_Ack (void)
 {
 	$ I2C_SDA In;
 	Easy_Delay (Delay_Low, 2);
@@ -161,92 +184,133 @@ static void I2C_Stop (void)
 
 
 //===================//
+// PRIVATE FUNCTIONS //
+//===================//
+
+static void I2C_Write_ACC (void)
+{
+	I2C_Tx_ACC();     // Transmit individual bits
+	I2C_Rx_Ack(); 	  // Listen for slave ack
+}
+
+
+static void I2C_Start_Reg_Write (void)
+{
+	I2C_Start();
+	A = (i2c_buffer[0] << 1) | I2C_WR_CMD; 		  // Transfer device addr + WR bit to buffer
+	I2C_Write_ACC();
+	A = i2c_buffer[I2C_BUFF_END];
+	I2C_Write_ACC();
+}
+
+static void I2C_Start_Read (void)
+{
+	I2C_Start();
+	A = (i2c_buffer[0] << 1) | I2C_RD_CMD; 		  // Transfer device addr + WR bit to buffer
+	I2C_Write_ACC();
+	I2C_Rx_ACC();
+}
+
+
+//===================//
 // PROGRAM INTERFACE //
 //===================//
 
 void I2C_Initialize (void)
 {
-	if (! i2c_num_initializations)  // If not yet initialized 
-	{
-		$ I2C_SDA	In, Pull;       // Set data input pull high register
-		$ I2C_SDA	Out, High;      // Set data input to output high
-		$ I2C_SCL	Out, High;      // Clock pin set output high
-		i2c_module_initialized = 1; // Enable I2C functions
-	}
-	i2c_num_initializations++;      // Count number of initializations
+	$ I2C_SDA	In, Pull;       // Set data input pull high register
+	$ I2C_SDA	Out, High;      // Set data input to output high
+	$ I2C_SCL	Out, High;      // Clock pin set output high
 }
 
 
 void I2C_Release (void)
 {
-	if (i2c_module_initialized)
-	{
-		i2c_num_initializations--;      // Count remaining initializations
-		if (! i2c_num_initializations)   // If none remaining
-		{
-			$ I2C_SCL	In, NoPull;     // Set clock to low power
-			$ I2C_SDA	In, NoPull;     // Set data to low power
-			i2c_module_initialized = 0; // Disable I2C functions
-		}
-	}
+	$ I2C_SCL	In, NoPull;     // Set clock to low power
+	$ I2C_SDA	In, NoPull;     // Set data to low power
 }
 
-
-void I2C_Stream_Write_Byte (void)
+void I2C_Data_Start (void)
 {
-	if (i2c_module_initialized)
-	{
-		I2C_Tx_ACC();     // Transmit individual bits
-		I2C_Listen_Ack(); // Listen for slave ack
-	}
+	i2c_p_data = &i2c_data_0;
 }
 
-
-void I2C_Stream_Write_Start (void)
+void I2C_Data_Next (void)
 {
-	if (i2c_module_initialized)
-	{
-		I2C_Start();                                  // I2C start condition
-		i2c_buffer = (i2c_device << 1) | I2C_WR_CMD; // Transfer device addr + WR bit to buffer
-		I2C_Stream_Write_Byte();                      // Transmit buffer
-	}
+	if (i2c_p_data != &i2c_data_n) {i2c_p_data++;}
 }
 
-
-void I2C_Stream_Read_Start (void)
+void I2C_Write_Basic (void)
 {
-	if (i2c_module_initialized)
-	{
-		I2C_Start();                                  // I2C start condition
-		i2c_buffer = (i2c_device << 1) | I2C_RD_CMD; // Transfer device addr + RD bit to buffer
-		I2C_Stream_Write_Byte();                      // Transmit buffer
-	}
+	I2C_Data_Start();
+	I2C_Start();
+	A = (i2c_buffer[0] << 1) | I2C_WR_CMD; 		  // Transfer device addr + WR bit to buffer
+	I2C_Write_ACC();
+	A = *i2c_p_data;
+	I2C_Write_ACC();
+	I2C_Stop();
 }
 
-
-void I2C_Stream_Read_Byte_Ack (void)
+void I2C_Write_Random (void)
 {
-	if (i2c_module_initialized)
-	{
-		I2C_Read();        // Listen for byte
-		I2C_Provide_Ack(); // Provide master ack
-	}
+	I2C_Data_Start();
+	I2C_Start_Reg_Write();
+	A = *i2c_p_data;
+	I2C_Write_ACC();
+	I2C_Stop();
 }
 
-
-void I2C_Stream_Read_Byte_NAck (void)
+void I2C_Write_Random_Sequential (void)
 {
-	if (i2c_module_initialized)
+	BYTE & i2c_write_len	= i2c_buffer[I2C_BUFF_LEN];
+
+	I2C_Data_Start();
+	I2C_Start_Reg_Write();
+	while(i2c_write_len--) 
 	{
-		I2C_Read();         // Listen for byte
-		I2C_Provide_NAck(); // Provide master nack
+		A = *i2c_p_data;
+		I2C_Write_ACC();
+		I2C_Data_Next();
 	}
+	I2C_Stop();
+	I2C_Data_Start();
 }
 
-
-void I2C_Stream_Stop (void)
+void I2C_Read_Basic (void)
 {
-	if (i2c_module_initialized) I2C_Stop(); // I2C stop condition
+	I2C_Data_Start();
+	I2C_Start_Read();
+	*i2c_p_data = A;
+	I2C_Tx_NAck();
+	I2C_Stop();
+}
+
+void I2C_Read_Random (void)
+{
+	I2C_Data_Start();
+	I2C_Start_Reg_Write();
+	I2C_Start_Read();
+	*i2c_p_data = A;
+	I2C_Tx_NAck();
+	I2C_Stop();
+}
+
+void I2C_Read_Random_Sequential (void)
+{
+	BYTE & i2c_read_len	= i2c_buffer[I2C_BUFF_LEN];
+	I2C_Data_Start();
+	I2C_Start_Reg_Write();
+	I2C_Start_Read();
+	while(i2c_read_len--)
+	{
+		I2C_Tx_Ack();
+		I2C_Rx_ACC();
+		*i2c_p_data = A;
+		I2C_Data_Next();
+	}
+	I2C_Tx_NAck();
+	I2C_Stop();
+	I2C_Data_Start();
 }
 
 #ENDIF // PERIPH_I2C

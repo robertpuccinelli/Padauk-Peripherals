@@ -1,4 +1,4 @@
-/* system_settings.h
+﻿/* system_settings.h
 
 This file is used to configure peripherals on the target Padauk IC.
 
@@ -31,14 +31,15 @@ Copyright (c) 2021 Robert R. Puccinelli
 #define SYSTEM_CLOCK   4000000   // Change to match your choice of SYSCLK in Hz
 #define ICE_ILRC_HZ    34700     // ILRC clock of ICE for code validation
 
-#define PERIPH_MATH    1         // Math utility.  Disable: 0, Enable: 1
-#define PERIPH_I2C     1         // I2C Master.    Disable: 0, Enable: 1
-#define PERIPH_PWM_11B 1         // 11B PWM.       Disable: 0, Enable: 1
-#define PERIPH_BUTTON  1         // Buttons.       Disable: 0, Enable: 1
-#define PERIPH_LCD     1         // LCD.           Disable: 0, Enable: 1
-#define PERIPH_EEPROM  1         // EEPROM.        Disable: 0, Enable: 1
-#define PERIPH_STEPPER 1         // Stepper motor. Disable: 0, Enable: 1
-#define PERIPH_TIMER8  0 
+#define PERIPH_MATH    	0         // Math utility.  Disable: 0, Enable: 1
+#define PERIPH_I2C     	1         // I2C Master.    Disable: 0, Enable: 1
+#define PERIPH_PWM_11B 	0         // 11B PWM.       Disable: 0, Enable: 1
+#define PERIPH_BUTTON  	0         // Buttons.       Disable: 0, Enable: 1
+#define PERIPH_LCD    	0         // LCD.           Disable: 0, Enable: 1
+#define PERIPH_7SEGMENT 0
+#define PERIPH_EEPROM  	0         // EEPROM.        Disable: 0, Enable: 1
+#define PERIPH_STEPPER 	0         // Stepper motor. Disable: 0, Enable: 1
+#define PERIPH_TIMER8  	0 
 
 //======================//
 // RESOURCE UTILIZATION //
@@ -133,10 +134,10 @@ Copyright (c) 2021 Robert R. Puccinelli
 // I2C MASTER //
 //============//
 #ifidni PERIPH_I2C, 1
-    #define I2C_SDA     PA.6
-    #define I2C_SCL     PA.7
-    #define I2C_WR_CMD  0b0
-    #define I2C_RD_CMD  0b1
+    #define I2C_SDA     	PA.6
+    #define I2C_SCL     	PA.7
+	#define I2C_BUFF_SIZE 	5 	// Mininum of 5 for sequential read/write  - Dev Addr / Data1 / ... / DataN / Num Data Bytes / Dev Register
+								// Minimum of 3 for single read/write - Dev Addr  / Data1 / Dev Register
 
     //      T_xxx    nS
     #define T_High   4700
@@ -145,14 +146,22 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define T_Stop   4700
     #define T_Buf    4700
 
-    // Addresses
-    #define    ST7032  62 // 0b0111110  // LCD Controller
-    #define    M24C01  80 // 0b1010000  // EEPROM, STM device 0 (can have 8 on bus) 
+    // Address Book
+    #define ST7032		0x62 // 0b0111110  // LCD Controller
+    #define M24C01  	0x80 // 0b1010000  // EEPROM, STM device 0 (can have 8 on bus) 
+	#define	TM1650		0x48 // 7-Segment controller, system settings
+	#define	TM1650_D1	0x68 // 7-Segment controller, digit 1
+	#define	TM1650_D2	0x6A // 7-Segment controller, digit 2
+	#define	TM1650_D3	0x6C // 7-Segment controller, digit 3
+	#define	TM1650_D4	0x6E // 7-Segment controller, digit 4
 
 
     ///////////////////////////
     // DO NOT TOUCH -- START //
     ///////////////////////////
+
+    #define I2C_WR_CMD  0b0
+    #define I2C_RD_CMD  0b1
 
     // TIME TO CLOCK CONVERSION
     #define I2C_D_HIGH   T_High    ?  (((SYSTEM_CLOCK) / (1000000000 / T_High))  + 1) : 0
@@ -161,8 +170,16 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define I2C_D_STOP   T_Stop    ?  (((SYSTEM_CLOCK) / (1000000000 / T_Stop))  + 1) : 0
     #define I2C_D_BUF    T_Buf     ?  (((SYSTEM_CLOCK) / (1000000000 / T_Buf))   + 1) : 0
 
-
-
+	// BUFFER ARRAY ELEMENTS
+	#define I2C_BUFF_END (I2C_BUFF_SIZE - 1)
+	#define I2C_BUFF_LEN (I2C_BUFF_SIZE - 2)
+	#ifidn I2C_BUFF_SIZE, 2			// Basic
+		#define I2C_DATA_END (I2C_BUFF_SIZE - 1)
+	#elseifidn I2C_BUFF_SIZE, 2		// Single random
+		#define I2C_DATA_END (I2C_BUFF_SIZE - 2)
+	#else							// Sequential random
+		#define I2C_DATA_END (I2C_BUFF_SIZE - 3)
+	#endif
 
     /////////////////////////
     // DO NOT TOUCH -- END //
@@ -332,6 +349,8 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define LCD_DRIVER     ST7032    // Only ST7032 is validated
     #define LCD_VOLTAGE    5         // Only 5V is validated
 
+	.ECHO %LCD_DRIVER
+
     // LCD Constants
     #define LCD_WIDTH      16        // Number of chars per line
     #define LCD_HEIGHT     2         // Number of lines
@@ -498,6 +517,78 @@ Copyright (c) 2021 Robert R. Puccinelli
         #endif
         #define LCD_2L_SETTINGS (LCD_FUNC_F | LCD_FUNC_2L | LCD_FUNC_HEIGHT1X)
         #define LCD_1L_SETTINGS (LCD_FUNC_F | LCD_FUNC_1L | LCD_FUNC_HEIGHT2X)
+    #endif
+
+    /////////////////////////
+    // DO NOT TOUCH -- END //
+    /////////////////////////
+#endif
+
+//=====================//
+// 7-SEGMENT INTERFACE //
+//=====================//
+
+#ifidni PERIPH_7SEGMENT, 1
+    #define SEGMENT_COMM_MODE	I2C       // 
+    #define SEGMENT_DRIVER		TM1650    // TM1650
+	#define SEGMENT_CHAR_SET	SET1
+
+
+    ///////////////////////////
+    // DO NOT TOUCH -- START //
+    ///////////////////////////
+
+	//TM1650 Driver Addresses, Commands, and Parameters
+    #ifidni %SEGMENT_DRIVER, TM1650
+		#define SEG_DIG1			0x68
+		#define SEG_DIG2			0x6A
+		#define SEG_DIG3			0x6C
+		#define SEG_DIG4			0x6E
+
+		#define SEG_SET_PARAM		0x48
+		#define SEG_READ_KEY		0x4F
+
+		#define SEG_BRIGHTNESS_1	0x10
+		#define SEG_BRIGHTNESS_2	0x20
+		#define SEG_BRIGHTNESS_3	0x30
+		#define SEG_BRIGHTNESS_4	0x40
+		#define SEG_BRIGHTNESS_5	0x50
+		#define SEG_BRIGHTNESS_6	0x60
+		#define SEG_BRIGHTNESS_7	0x70
+		#define SEG_BRIGHTNESS_8	0x00
+		#define SEG_7_SEGMENT		0x08
+		#define SEG_8_SEGMENT		0x00
+		#define SEG_PWR_NORMAL		0x00
+		#define SEG_PWR_STANDBY		0x04
+		#define SEG_SCREEN_ON		0x01
+		#define SEG_SCREEN_OFF		0x00
+	#endif
+
+	// SET 1  MSB .gfedcba LSB
+	#ifidni SEGMENT_CHAR_SET, SET1
+		#define SEG_0	0b00111111
+		#define SEG_1	0b00000110
+		#define SEG_2	0b01011011
+		#define SEG_3	0b01001111
+		#define SEG_4	0b01100111
+		#define SEG_5	0b01101101
+		#define SEG_6	0b01111101
+		#define SEG_7	0b00000111
+		#define SEG_8	0b01111111
+		#define SEG_9	0b01101111
+		#define SEG_DOT	0b10000000
+		#define SEG_A	0b01110111
+		#define SEG_C	0b00111001
+		#define SEG_L	0b00111000
+		#define SEG_o	0b01011100
+		#define SEG_d	0b01011110
+	#endif
+
+
+    #ifidni SEGMENT_COMM_MODE, I2C
+        #ifz PERIPH_I2C
+            .error Segment Display with I2C Comm Mode REQUIRES PERIPH_I2C to be enabled! 
+        #endif
     #endif
 
     /////////////////////////
@@ -803,5 +894,93 @@ Copyright (c) 2021 Robert R. Puccinelli
     /////////////////////////
 #endif
 
+
+#ifidni PERIPH_LIGHT_SENSOR, 1
+    #define LIGHT_SENSOR_COMM_MODE    I2C       // 
+    #define LIGHT_SENSOR_DRIVER       APDS9306  //  
+
+
+    ///////////////////////////
+    // DO NOT TOUCH -- START //
+    ///////////////////////////
+    #ifidni %LIGHT_SENSOR_DRIVER, APDS9306
+		//Device Addr
+		#define LIGHT_SENSOR_ADDR	0x52
+
+		//Device Registers
+		#define LIGHT_SENSOR_CTRL	0x00
+		#define LIGHT_SENSOR_RATE	0x04
+		#define LIGHT_SENSOR_GAIN	0x05
+		#define LIGHT_SENSOR_ID		0x06
+		#define LIGHT_SENSOR_STATUS	0x07
+		#define LIGHT_SENSOR_CLR0	0x0A
+		#define LIGHT_SENSOR_CLR1	0x0B
+		#define LIGHT_SENSOR_CLR2	0x0C
+		#define LIGHT_SENSOR_DATA0	0x0D
+		#define LIGHT_SENSOR_DATA1	0x0E
+		#define LIGHT_SENSOR_DATA2	0x0F
+
+		#define LIGHT_SENSOR_INTCFG	0x19
+		#define LIGHT_SENSOR_INTPER	0x1A
+		#define LIGHT_SENSOR_UT0	0x21
+		#define LIGHT_SENSOR_UT1	0x22
+		#define LIGHT_SENSOR_UT2	0X23
+		#define LIGHT_SENSOR_LT0	0x24
+		#define LIGHT_SENSOR_LT1	0x25
+		#define LIGHT_SENSOR_LT2	0x26
+		#define LIGHT_SENSOR_TVAR	0x27
+
+		//Register Settings
+		#define LIGHT_SENSOR_RST	0b00010000
+		#define LIGHT_SENSOR_ON		0b00000010
+		#define LIGHT_SENSOR_OFF	0b00000000
+
+		#define LIGHT_SENSOR_20b	0b00000000
+		#define LIGHT_SENSOR_19b	0b00010000
+		#define LIGHT_SENSOR_18b	0b00100000
+		#define LIGHT_SENSOR_17b	0b00110000
+		#define LIGHT_SENSOR_16b	0b01000000
+		#define LIGHT_SENSOR_13b	0b01010000
+		#define LIGHT_SENSOR_25ms	0b00000000
+		#define LIGHT_SENSOR_50ms	0b00000001
+		#define LIGHT_SENSOR_100ms	0b00000010
+		#define LIGHT_SENSOR_200ms	0b00000011
+		#define LIGHT_SENSOR_500ms	0b00000100
+		#define LIGHT_SENSOR_1000ms	0b00000101
+		#define LIGHT_SENSOR_2000ms	0b00000110
+		#define LIGHT_SENSOR_2000ms	0b00000111
+
+		#define LIGHT_SENSOR_1G		0x00
+		#define LIGHT_SENSOR_3G		0x01
+		#define LIGHT_SENSOR_6G		0x02
+		#define LIGHT_SENSOR_9G		0x03
+		#define LIGHT_SENSOR_18G	0x04
+
+		#define LIGHT_SENSOR_STPWR	0b00100000
+		#define LIGHT_SENSOR_STINT	0b00010000
+		#define LIGHT_SENSOR_STDATA	0b00001000
+
+		#define LIGHT_SENSOR_INTCLR	0x00
+		#define LIGHT_SENSOR_INTALS	0b00010000
+		#define LIGHT_SENSOR_INTT	0x00
+		#define LIGHT_SENSOR_INTVAR	0b00001000
+		#define LIGHT_SENSOR_INTON	0b00000100
+		#define LIGHT_SENSOR_INTOFF	0x00
+
+
+	#endif
+
+    #ifidni LIGHT_SENSOR_COMM_MODE, I2C
+        #ifz PERIPH_I2C
+            .error Light Sensor with I2C Comm Mode REQUIRES PERIPH_I2C to be enabled! 
+        #endif
+    #endif
+
+    /////////////////////////
+    // DO NOT TOUCH -- END //
+    /////////////////////////
+
+
+#endif
 
 #endif // SYSTEM_SETTINGS_H

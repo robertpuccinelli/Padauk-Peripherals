@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (c) 2021 Robert R. Puccinelli
 */
 #include	"../system_settings.h"
@@ -110,25 +110,20 @@ void	FPPA0 (void)
 	//===================//
 	// I2C FEATURE CHECK //
 	//===================//
-
 /*
+	i2c_dev_addr = 0b1010101;
+	i2c_reg_addr = 3;
+	i2c_write_len = 2;
 	I2C_Initialize();
-
-	i2c_device = ST7032;	// Identify target device
-	I2C_Stream_Write_Start();
-	i2c_buffer = 0b11001010;
-	I2C_Stream_Write_Byte();
-	I2C_Stream_Stop();
-
-	i2c_device = 0b0011100;	// Arbitrary ID
-	I2C_Stream_Read_Start();
-	I2C_Stream_Read_Byte_Ack();
-	I2C_Stream_Read_Byte_NAck();
-	I2C_Stream_Stop();
-
+	I2C_Write_Basic();
+	I2C_Write_Random();
+	I2C_Write_Random_Sequential();
+	i2c_read_len = 3;
+	I2C_Read_Basic();
+	I2C_Read_Random();
+	I2C_Read_Random_Sequential();
 	I2C_Release();
 */
-
 
 	//=======================//
 	// 11b PWM FEATURE CHECK //
