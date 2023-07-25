@@ -35,7 +35,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 #define PERIPH_I2C     	1         // I2C Master.    Disable: 0, Enable: 1
 #define PERIPH_PWM_11B 	0         // 11B PWM.       Disable: 0, Enable: 1
 #define PERIPH_BUTTON  	0         // Buttons.       Disable: 0, Enable: 1
-#define PERIPH_LCD    	0         // LCD.           Disable: 0, Enable: 1
+#define PERIPH_LCD    	1         // LCD.           Disable: 0, Enable: 1
 #define PERIPH_7SEGMENT 0
 #define PERIPH_EEPROM  	0         // EEPROM.        Disable: 0, Enable: 1
 #define PERIPH_STEPPER 	0         // Stepper motor. Disable: 0, Enable: 1
@@ -136,7 +136,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 #ifidni PERIPH_I2C, 1
     #define I2C_SDA     	PA.6
     #define I2C_SCL     	PA.7
-	#define I2C_BUFF_SIZE 	5 	// Mininum of 5 for sequential read/write  - Dev Addr / Data1 / ... / DataN / Num Data Bytes / Dev Register
+	#define I2C_BUFF_SIZE 	3 	// Mininum of 5 for sequential read/write  - Dev Addr / Data1 / ... / DataN / Num Data Bytes / Dev Register
 								// Minimum of 3 for single read/write - Dev Addr  / Data1 / Dev Register
 
     //      T_xxx    nS
@@ -349,8 +349,6 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define LCD_DRIVER     ST7032    // Only ST7032 is validated
     #define LCD_VOLTAGE    5         // Only 5V is validated
 
-	.ECHO %LCD_DRIVER
-
     // LCD Constants
     #define LCD_WIDTH      16        // Number of chars per line
     #define LCD_HEIGHT     2         // Number of lines
@@ -419,7 +417,7 @@ Copyright (c) 2021 Robert R. Puccinelli
     ///////////////////////////
 
     // DRIVER INSTRUCTION CODES
-    #ifidni %LCD_DRIVER, ST7032
+    #ifidni %LCD_DRIVER, %ST7032
 
         #define LCD_RAISE_CONTROL_B     0x80
         #define LCD_LOWER_CONTROL_B     0x00

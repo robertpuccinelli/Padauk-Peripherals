@@ -212,28 +212,26 @@ void	FPPA0 (void)
 	//===================//
 
 /*
-	lcd_device_addr = LCD_DRIVER;
-
 	LCD_Initialize();
 	lcd_trx_byte = 0x3;
 	LCD_Address_Set();
 	lcd_trx_byte = LCD_A;
-	LCD_Write_Byte();
+	LCD_Write_Data();
 	lcd_trx_byte = LCD_Z;
-	LCD_Write_Byte();
+	LCD_Write_Data();
 	lcd_trx_byte = LCD_0;
-	LCD_Write_Byte();
+	LCD_Write_Data();
 	lcd_trx_byte = LCD_9;
-	LCD_Write_Byte();
+	LCD_Write_Data();
 	LCD_MODE_1L();
 	LCD_Cursor_Shift_L();
 	LCD_Cursor_Shift_L();
-	lcd_trx_byte = LCD_9;
-	LCD_Write_Byte();
+ 	lcd_trx_byte = LCD_9;
+	LCD_Write_Data();
 	LCD_Cursor_Shift_R();
 	lcd_trx_byte = LCD_9;
-	LCD_Write_Byte();
-	LCD_Read_Byte();
+	LCD_Write_Data();
+	LCD_Read_Data();
 	LCD_Mode_2L();
 	LCD_Check_Addr();
 	LCD_Home();

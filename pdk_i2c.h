@@ -24,8 +24,8 @@ RAM Consumed :  18B / 0x12
 NOTES:
 	Devices can be configured for handling I2C data in different ways,
 	so set I2C_BUFF_SIZE accordingly in system_settings.h. When using
-	sequential read/write calls, set the 3rd byte to be the number of
-	bytes to process in the read/write action.
+	sequential read/write calls, set the 2nd to last byte to be the 
+	number of bytes to process in the read/write action.
 	
 	Buffer size examples:
 		[2] - Dev Addr, Data (Basic device, see Freetronics Relay8)
@@ -53,7 +53,6 @@ BYTE & i2c_dev_addr				= i2c_buffer[0];			// Element of array for all ops
 BYTE & i2c_reg_addr				= i2c_buffer[I2C_BUFF_END];	// Element of array for random ops
 BYTE & i2c_read_len				= i2c_buffer[I2C_BUFF_LEN];	// Sequential read parameter
 BYTE & i2c_write_len			= i2c_read_len;				// Sequential write parameter
-
 
 //===================//
 // PROGRAM INTERFACE //
