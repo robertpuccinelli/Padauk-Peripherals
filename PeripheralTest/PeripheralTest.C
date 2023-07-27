@@ -8,6 +8,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 //#include	"../pdk_pwm_11b.h"
 //#include 	"../pdk_button.h"
 //#include 	"../pdk_lcd.h"
+#include "../pdk_7seg_i2c.h"
 //#include	"../pdk_eeprom.h"
 //#include	"../pdk_stepper.h"
 
@@ -238,6 +239,19 @@ void	FPPA0 (void)
 	LCD_Clear();
 	LCD_Release();
 */
+
+	//=========================//
+	// 7-SEGMENT FEATURE CHECK //
+	//=========================//
+
+	Seg_Initialize();
+	Seg_First_Digit();
+	seg_data_byte = SEG_BRIGHTNESS_7 | SEG_7_SEGMENT | SEG_PWR_NORMAL | SEG_SCREEN_ON;
+	Seg_Write_Cmd();
+	seg_data_byte = SEG_1 | SEG_DOT;
+	Seg_Write_Char();
+	Seg_Next_Digit();
+	Seg_Release();
 
 
 	//======================//

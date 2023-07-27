@@ -35,8 +35,8 @@ Copyright (c) 2021 Robert R. Puccinelli
 #define PERIPH_I2C     	1         // I2C Master.    Disable: 0, Enable: 1
 #define PERIPH_PWM_11B 	0         // 11B PWM.       Disable: 0, Enable: 1
 #define PERIPH_BUTTON  	0         // Buttons.       Disable: 0, Enable: 1
-#define PERIPH_LCD    	1         // LCD.           Disable: 0, Enable: 1
-#define PERIPH_7SEGMENT 0
+#define PERIPH_LCD    	0         // LCD.           Disable: 0, Enable: 1
+#define PERIPH_7SEGMENT 1		  // 7-seg display. Disable: 0, Enable: 1
 #define PERIPH_EEPROM  	0         // EEPROM.        Disable: 0, Enable: 1
 #define PERIPH_STEPPER 	0         // Stepper motor. Disable: 0, Enable: 1
 #define PERIPH_TIMER8  	0 
@@ -139,6 +139,10 @@ Copyright (c) 2021 Robert R. Puccinelli
 	#define I2C_BUFF_SIZE 	3 	// Mininum of 5 for sequential read/write  - Dev Addr / Data1 / ... / DataN / Num Data Bytes / Dev Register
 								// Minimum of 3 for single read/write - Dev Addr  / Data1 / Dev Register
 
+	#define USE_I2C_DEVICE_ST7032		0 // Disable: 0, Enable: 1
+	#define USE_I2C_DEVICE_TM1650		1 // Disable: 0, Enable: 1
+	#define USE_I2C_DEVICE_APDS9306		1 // Disable: 0, Enable: 1
+
     //      T_xxx    nS
     #define T_High   4700
     #define T_Low    4700
@@ -151,10 +155,7 @@ Copyright (c) 2021 Robert R. Puccinelli
     #define M24C01  	0x80 // 0b1010000  // EEPROM, STM device 0 (can have 8 on bus) 
 	#define	TM1650		0x48 // 7-Segment controller, system settings
 	#define	TM1650_D1	0x68 // 7-Segment controller, digit 1
-	#define	TM1650_D2	0x6A // 7-Segment controller, digit 2
-	#define	TM1650_D3	0x6C // 7-Segment controller, digit 3
-	#define	TM1650_D4	0x6E // 7-Segment controller, digit 4
-
+	#define APDS9306	0x52 // Ambient Light Sensor
 
     ///////////////////////////
     // DO NOT TOUCH -- START //
@@ -345,80 +346,31 @@ Copyright (c) 2021 Robert R. Puccinelli
 // LCD INTERFACE //
 //===============//
 #ifidni PERIPH_LCD, 1
-    #define LCD_COMM_MODE  I2C       // Parallel not yet developed
-    #define LCD_DRIVER     ST7032    // Only ST7032 is validated
-    #define LCD_VOLTAGE    5         // Only 5V is validated
-
-    // LCD Constants
-    #define LCD_WIDTH      16        // Number of chars per line
-    #define LCD_HEIGHT     2         // Number of lines
-    #define LCD_L1         0x00      // Line 1 address
-    #define LCD_L2         0x40      // Line 2 address
-    #define LCD_INIT_T     40000     // Initialization time, microseconds
-    #define LCD_PWR_T      200000    // Power setting stabilization time, microseconds
-    #define LCD_WAIT_T     30        // Instruction gap time, microseconds
-
-
-    // Character Values, 8-bit
-    #define LCD_A        0x41
-    #define LCD_B        0x42
-    #define LCD_C        0x43
-    #define LCD_D        0x44
-    #define LCD_E        0x45
-    #define LCD_F        0x46
-    #define LCD_G        0x47
-    #define LCD_H        0x48    
-    #define LCD_I        0x49
-    #define LCD_J        0x4A
-    #define LCD_K        0x4B
-    #define LCD_L        0x4C
-    #define LCD_M        0x4D
-    #define LCD_N        0x4E
-    #define LCD_O        0x4F
-    #define LCD_P        0x50
-    #define LCD_Q        0x51
-    #define LCD_R        0x52
-    #define LCD_S        0x53
-    #define LCD_T        0x54
-    #define LCD_U        0x55
-    #define LCD_V        0x56
-    #define LCD_W        0x57
-    #define LCD_X        0x58
-    #define LCD_Y        0x59
-    #define LCD_Z        0x5A
-    #define LCD_0        0x30
-    #define LCD_1        0x31
-    #define LCD_2        0x32
-    #define LCD_3        0x33
-    #define LCD_4        0x34
-    #define LCD_5        0x35
-    #define LCD_6        0x36
-    #define LCD_7        0x37
-    #define LCD_8        0x38
-    #define LCD_9        0x39
-    #define LCD_dot      0x2E
-    #define LCD_lt       0x3C
-    #define LCD_gt       0x3E
-    #define LCD_eq       0x3D
-    #define LCD_colon    0x3A
-    #define LCD_space    0x20
-    #define LCD_para_l   0x28
-    #define LCD_para_r   0x29
-    #define LCD_star     0x2A
-    #define LCD_plus     0x2B
-    #define LCD_minus    0x2D
-    #define LCD_slash    0x2F
-    #define LCD_return   0xFC
-    #define LCD_arrow_r  0x07
 
 
     ///////////////////////////
     // DO NOT TOUCH -- START //
     ///////////////////////////
 
-    // DRIVER INSTRUCTION CODES
-    #ifidni %LCD_DRIVER, %ST7032
 
+    // ST7032
+    #ifidni USE_I2C_DEVICE_ST7032, 1
+
+	    #define LCD_COMM_MODE	I2C       // Parallel not yet developed
+    	#define LCD_DRIVER		ST7032    // Only ST7032 is validated
+		#define LCD_CHAR_SET	CHARSET1
+    	#define LCD_VOLTAGE		5         // Only 5V is validated
+
+    	// Hardware Description
+    	#define LCD_WIDTH      16        // Number of chars per line
+    	#define LCD_HEIGHT     2         // Number of lines
+    	#define LCD_L1         0x00      // Line 1 address
+    	#define LCD_L2         0x40      // Line 2 address
+    	#define LCD_INIT_T     40000     // Initialization time, microseconds
+	    #define LCD_PWR_T      200000    // Power setting stabilization time, microseconds
+	    #define LCD_WAIT_T     30        // Instruction gap time, microseconds
+
+		// Registers and Commands
         #define LCD_RAISE_CONTROL_B     0x80
         #define LCD_LOWER_CONTROL_B     0x00
         #define LCD_DATA_MODE           0x40
@@ -490,16 +442,68 @@ Copyright (c) 2021 Robert R. Puccinelli
         #define LCD_FOLLOWER_RAB1       0x02    // Function set: EXTENDED
         #define LCD_FOLLOWER_RAB0       0x01    // Function set: EXTENDED
 
-        #ifidni LCD_VOLTAGE, 5
-			#define LCD_INIT_FUNC1             (LCD_FUNC_F | LCD_FUNC_2L | LCD_FUNC_NORMAL)
-            #define LCD_INIT_FUNC2             (LCD_FUNC_F | LCD_FUNC_2L | LCD_FUNC_EXTENDED)
-            #define LCD_INIT_BIAS_OSC          (LCD_BIAS_OSC_F | LCD_OSC_F2)
-            #define LCD_INIT_PWR_ICON_CNTRSTH  (LCD_PWR_ICON_CNTRSTH_F)
-            #define LCD_INIT_CONTRASTL         (LCD_CONTRASTL_F | LCD_CONTRASTL_C3 | LCD_CONTRASTL_C0)
-            #define LCD_INIT_FOLLOWER          (LCD_FOLLOWER_F | LCD_FOLLOWER_ON | LCD_FOLLOWER_RAB2)
-        #endif
-
+ 		#define LCD_INIT_FUNC1             (LCD_FUNC_F | LCD_FUNC_2L | LCD_FUNC_NORMAL)
+        #define LCD_INIT_FUNC2             (LCD_FUNC_F | LCD_FUNC_2L | LCD_FUNC_EXTENDED)
+        #define LCD_INIT_BIAS_OSC          (LCD_BIAS_OSC_F | LCD_OSC_F2)
+        #define LCD_INIT_PWR_ICON_CNTRSTH  (LCD_PWR_ICON_CNTRSTH_F)
+        #define LCD_INIT_CONTRASTL         (LCD_CONTRASTL_F | LCD_CONTRASTL_C3 | LCD_CONTRASTL_C0)
+        #define LCD_INIT_FOLLOWER          (LCD_FOLLOWER_F | LCD_FOLLOWER_ON | LCD_FOLLOWER_RAB2)
     #endif
+
+
+	// CHARSET1
+	#ifidni LCD_CHAR_SET, CHARSET1
+	    #define LCD_A        0x41
+	    #define LCD_B        0x42
+	    #define LCD_C        0x43
+	    #define LCD_D        0x44
+	    #define LCD_E        0x45
+	    #define LCD_F        0x46
+	    #define LCD_G        0x47
+	    #define LCD_H        0x48    
+	    #define LCD_I        0x49
+	    #define LCD_J        0x4A
+	    #define LCD_K        0x4B
+	    #define LCD_L        0x4C
+	    #define LCD_M        0x4D
+	    #define LCD_N        0x4E
+	    #define LCD_O        0x4F
+	    #define LCD_P        0x50
+	    #define LCD_Q        0x51
+	    #define LCD_R        0x52
+	    #define LCD_S        0x53
+	    #define LCD_T        0x54
+	    #define LCD_U        0x55
+	    #define LCD_V        0x56
+	    #define LCD_W        0x57
+	    #define LCD_X        0x58
+	    #define LCD_Y        0x59
+	    #define LCD_Z        0x5A
+	    #define LCD_0        0x30
+	    #define LCD_1        0x31
+	    #define LCD_2        0x32
+	    #define LCD_3        0x33
+	    #define LCD_4        0x34
+	    #define LCD_5        0x35
+	    #define LCD_6        0x36
+	    #define LCD_7        0x37
+	    #define LCD_8        0x38
+	    #define LCD_9        0x39
+	    #define LCD_dot      0x2E
+	    #define LCD_lt       0x3C
+	    #define LCD_gt       0x3E
+	    #define LCD_eq       0x3D
+	    #define LCD_colon    0x3A
+	    #define LCD_space    0x20
+	    #define LCD_para_l   0x28
+	    #define LCD_para_r   0x29
+	    #define LCD_star     0x2A
+	    #define LCD_plus     0x2B
+	    #define LCD_minus    0x2D
+	    #define LCD_slash    0x2F
+	    #define LCD_return   0xFC
+	    #define LCD_arrow_r  0x07
+	#endif
 
 
     // TIME TO CLOCK CONVERSION
@@ -527,21 +531,18 @@ Copyright (c) 2021 Robert R. Puccinelli
 //=====================//
 
 #ifidni PERIPH_7SEGMENT, 1
-    #define SEGMENT_COMM_MODE	I2C       // 
-    #define SEGMENT_DRIVER		TM1650    // TM1650
-	#define SEGMENT_CHAR_SET	SET1
-
 
     ///////////////////////////
     // DO NOT TOUCH -- START //
     ///////////////////////////
 
 	//TM1650 Driver Addresses, Commands, and Parameters
-    #ifidni %SEGMENT_DRIVER, TM1650
-		#define SEG_DIG1			0x68
-		#define SEG_DIG2			0x6A
-		#define SEG_DIG3			0x6C
-		#define SEG_DIG4			0x6E
+    #if USE_I2C_DEVICE_TM1650
+		#define	SEG_COMM_MODE		I2C 
+	    #define SEG_DRIVER			TM1650
+		#define SEG_CHAR_SET		CHARSET1
+		#define SEG_DIG1			TM1650_D1
+		#define SEG_DIG_OFFSET		0x02
 
 		#define SEG_SET_PARAM		0x48
 		#define SEG_READ_KEY		0x4F
@@ -563,7 +564,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 	#endif
 
 	// SET 1  MSB .gfedcba LSB
-	#ifidni SEGMENT_CHAR_SET, SET1
+	#ifidni SEG_CHAR_SET, CHARSET1
 		#define SEG_0	0b00111111
 		#define SEG_1	0b00000110
 		#define SEG_2	0b01011011
@@ -583,7 +584,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 	#endif
 
 
-    #ifidni SEGMENT_COMM_MODE, I2C
+    #ifidni SEG_COMM_MODE, I2C
         #ifz PERIPH_I2C
             .error Segment Display with I2C Comm Mode REQUIRES PERIPH_I2C to be enabled! 
         #endif
@@ -621,6 +622,74 @@ Copyright (c) 2021 Robert R. Puccinelli
     /////////////////////////
 #endif
 
+
+//=====================//
+// APDS-9306 INTERFACE //
+//=====================//
+
+#ifidni USE_I2C_DEVICE_APDS9306, 1
+
+	//REGISTER ADDRESSES
+	#define APDS_MAIN_CTRL	0x00
+	#define APDS_MEAS_RATE	0x04
+	#define APDS_GAIN		0x05
+	#define APDS_PART_ID	0x06
+	#define APDS_STATUS		0x07
+	#define APDS_CLR_DATA0	0x0A
+	#define APDS_CLR_DATA1	0x0B
+	#define	APDS_CLR_DATA2	0x0C
+	#define APDS_ALS_DATA0	0x0D
+	#define APDS_ALS_DATA1	0x0E
+	#define APDS_ALS_DATA2	0x0F
+	#define APDS_INT_CFG	0x19
+	#define APDS_INT_PER	0x1A
+	#define APDS_TH_UP_0	0x21
+	#define APDS_TH_UP_1	0x22
+	#define APDS_TH_UP_2	0x23
+	#define APDS_TH_LW_0	0x24
+	#define APDS_TH_LW_1	0x25
+	#define APDS_TH_LW_2	0x26
+	#define APDS_TH_VAR		0x27
+
+
+	//REGISTER PARAMETERS
+	#define APDS_SW_RESET	0b00010000
+	#define APDS_ALS_ON		0b00000010
+	#define APDS_ALS_OFF	0b00000000
+
+	#define APDS_RES_20		0b00000000	// 400ms
+	#define APDS_RES_19		0b00010000	// 200ms
+	#define APDS_RES_18		0b00100000	// 100ms
+	#define APDS_RES_17		0b00110000	//  50ms
+	#define APDS_RES_16		0b01000000	//  25ms
+	#define APDS_RES_13		0b01010000	// 3.2ms
+	#define APDS_MEAS_025	0b00000000
+	#define APDS_MEAS_050	0b00000001
+	#define APDS_MEAS_100	0b00000010
+	#define APDS_MEAS_200	0b00000011
+	#define APDS_MEAS_500	0b00000100
+	#define APDS_MEAS_1S	0b00000101
+	#define APDS_MEAS_2S	0b00000110
+	#define APDS_MEAS_2S0	0b00000111
+
+	#define APDS_GAIN_1		0b00000000
+	#define APDS_GAIN_3		0b00000001
+	#define APDS_GAIN_6		0b00000010
+	#define APDS_GAIN_9		0b00000011
+	#define APDS_GAIN_18	0b00000100
+
+	#define APDS_STS_PWR	0b00100000
+	#define APDS_STS_INT	0b00010000
+	#define APDS_STS_DATA	0b00001000
+
+	#define APDS_INT_CLR	0b00000000
+	#define APDS_INT_ALS	0b00010000
+	#define APDS_INT_TH		0b00000000
+	#define APDS_INT_VAR	0b00001000
+	#define APDS_INT_ON		0b00000100
+	#define APDS_INT_OFF	0b00000000
+
+#endif
 
 //==========//
 // 8b TIMER //

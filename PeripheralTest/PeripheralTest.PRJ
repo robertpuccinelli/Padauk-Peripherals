@@ -27,6 +27,7 @@ PROJECT=PRE_FILE
 ~..\pdk_eeprom.c
 ~..\pdk_i2c.c
 ~..\pdk_lcd.c
+~..\pdk_7seg.c
 [HEAD]
 ~..\system_settings.h
 ~..\pdk_math.h
@@ -37,6 +38,7 @@ PROJECT=PRE_FILE
 ~..\pdk_eeprom.h
 ~..\pdk_i2c.h
 ~..\pdk_lcd.h
+~..\pdk_7seg.h
 [DEPEND]
 ~$:INC_PDK\PMS132B.INC
 ~PeripheralTest.PRE

@@ -8,19 +8,20 @@ Timings are configured for 100kHz with system_settings.h. Higher may
 be achievable, but it is currently untested.
 
 Basic with 2B buffer
-ROM Consumed : 142B / 0x8E
-RAM Consumed :  15B / 0x0F
-
+ROM Consumed : 132B / 0x84
+RAM Consumed :  12B / 0x0C
 
 Basic and Standard with 3B buffer
-ROM Consumed : 169B / 0xA9
-RAM Consumed :  16B / 0x10
+ROM Consumed : 156B / 0x9C
+RAM Consumed :  13B / 0x0D
 
+Only Standard with 3B buffer
+ROM Consumed : 139B / 0x8B
+RAM Consumed :  13B / 0x0D
 
 All functions with 5B buffer
-ROM Consumed : 223B / 0xDF
-RAM Consumed :  18B / 0x12
-
+ROM Consumed : 210B / 0xD2
+RAM Consumed :  15B / 0x0F
 
 NOTES:
 	Devices can be configured for handling I2C data in different ways,
@@ -58,12 +59,12 @@ i2c_p_data = &i2c_buffer[0];	// Pointer to current data byte
 // !! CANNOT USE ALIASES IN PROGRAM IF DEFINED IN .C FILE !! //
 // DEFINITIONS LEFT HERE TO HELP TRANSLATE SOURCE CODE //
 
-//BYTE & i2c_dev_addr				= i2c_buffer[0];			// Element of array for all ops
-//BYTE & i2c_reg_addr				= i2c_buffer[I2C_BUFF_END];	// Element of array for random ops
-//BYTE & i2c_read_len				= i2c_buffer[I2C_BUFF_REG];	// Sequential read parameter
-//BYTE & i2c_write_len				= i2c_read_len;				// Sequential write parameter
-BYTE & i2c_data_0					= i2c_buffer[1];			// Element of array for all ops 
-BYTE & i2c_data_n					= i2c_buffer[I2C_DATA_END];	// Element of array for sequential r/w
+BYTE & i2c_dev_addr				= i2c_buffer[0];			// Element of array for all ops
+BYTE & i2c_reg_addr				= i2c_buffer[I2C_BUFF_END];	// Element of array for random ops
+BYTE & i2c_read_len				= i2c_buffer[I2C_BUFF_LEN];	// Sequential read parameter
+BYTE & i2c_write_len			= i2c_read_len;				// Sequential write parameter
+BYTE & i2c_data_0				= i2c_buffer[1];			// Element of array for all ops 
+BYTE & i2c_data_n				= i2c_buffer[I2C_DATA_END];	// Element of array for sequential r/w
 
 BYTE i2c_flags = 0;
 BIT  i2c_slave_ack_bit : i2c_flags.?;       // Slave acknowledge bit
@@ -96,44 +97,34 @@ static void I2C_Start (void)
 	$ I2C_SCL	Low;
 
 }
-
-
-static void I2C_Tx_Bit (void)
-{
-	sl A;
-	swapc I2C_SDA;
-	Easy_Delay (Delay_Low, 8)
-	$ I2C_SCL High;
-	Easy_Delay (Delay_High, 0)
-	$ I2C_SCL Low;
-}
-
-
+/*
 static void I2C_Tx_ACC (void)
 {
-	.REPEAT 8
-		I2C_Tx_Bit();
-	.ENDM
-}
-
-
-static void I2C_Rx_Bit (void)
-{
-	Easy_Delay (Delay_Low, 4)
-	$ I2C_SCL High;
-	swapc I2C_SDA;
-	slc A;
-	Easy_Delay (Delay_High, 2)
-	$ I2C_SCL Low;
-}
-
+	BYTE TEMP = 8;
+	while(TEMP--)
+	{
+		sl A;
+		swapc I2C_SDA;
+		Easy_Delay (Delay_Low, 8)
+		$ I2C_SCL High;
+		Easy_Delay (Delay_High, 0)
+		$ I2C_SCL Low;
+	}
+}*/
 
 static void I2C_Rx_ACC (void)
 {
+	BYTE TEMP = 8;
 	$ I2C_SDA In;
-	.REPEAT 8
-		I2C_Rx_Bit();
-	.ENDM
+	while(TEMP--)
+	{
+		Easy_Delay (Delay_Low, 4)
+		$ I2C_SCL High;
+		swapc I2C_SDA;
+		slc A;
+		Easy_Delay (Delay_High, 2)
+		$ I2C_SCL Low;
+	}
 }
 
 
@@ -156,7 +147,7 @@ static void I2C_Tx_NAck (void)
 	$ I2C_SCL Low;
 }
 
-
+/*
 static void I2C_Rx_Ack (void)
 {
 	$ I2C_SDA In;
@@ -168,7 +159,7 @@ static void I2C_Rx_Ack (void)
 	$ I2C_SCL Low;
 	$ I2C_SDA Out;
 }
-
+*/
 
 static void I2C_Stop (void)
 {
@@ -189,8 +180,30 @@ static void I2C_Stop (void)
 
 static void I2C_Write_ACC (void)
 {
-	I2C_Tx_ACC();     // Transmit individual bits
-	I2C_Rx_Ack(); 	  // Listen for slave ack
+//	I2C_Tx_ACC();     // Transmit individual bits
+	// Tx ACC - Send byte in ACC
+	BYTE TEMP = 8;
+	while(TEMP--)
+	{
+		sl A;
+		swapc I2C_SDA;
+		Easy_Delay (Delay_Low, 8)
+		$ I2C_SCL High;
+		Easy_Delay (Delay_High, 0)
+		$ I2C_SCL Low;
+	}
+
+	//	I2C_Rx_Ack(); 	  // Listen for slave ack
+
+	// Rx Ack - Listen for slave ack
+	$ I2C_SDA In;
+	Easy_Delay (Delay_Low, 2);
+	$ I2C_SCL High;
+	i2c_slave_ack_bit = 0;
+	if (I2C_SDA) {i2c_slave_ack_bit = 1;}
+	Easy_Delay (Delay_High, 3);
+	$ I2C_SCL Low;
+	$ I2C_SDA Out;
 }
 
 
@@ -262,11 +275,11 @@ void I2C_Write_Random (void)
 
 void I2C_Write_Random_Sequential (void)
 {
-	BYTE & i2c_write_len	= i2c_buffer[I2C_BUFF_LEN];
+//	BYTE & i2c_write_len	= i2c_buffer[I2C_BUFF_LEN];
 
 	I2C_Data_Start();
 	I2C_Start_Reg_Write();
-	while(i2c_write_len--) 
+	while(i2c_buffer[I2C_BUFF_LEN]--) 
 	{
 		A = *i2c_p_data;
 		I2C_Write_ACC();
@@ -297,11 +310,11 @@ void I2C_Read_Random (void)
 
 void I2C_Read_Random_Sequential (void)
 {
-	BYTE & i2c_read_len	= i2c_buffer[I2C_BUFF_LEN];
+//	BYTE & i2c_read_len	= i2c_buffer[I2C_BUFF_LEN];
 	I2C_Data_Start();
 	I2C_Start_Reg_Write();
 	I2C_Start_Read();
-	while(i2c_read_len--)
+	while(i2c_buffer[I2C_BUFF_LEN]--)
 	{
 		I2C_Tx_Ack();
 		I2C_Rx_ACC();

@@ -8,18 +8,20 @@ Timings are configured for 100kHz with system_settings.h. Higher may
 be achievable, but it is currently untested.
 
 Basic with 2B buffer
-ROM Consumed : 142B / 0x8E
-RAM Consumed :  15B / 0x0F
-
+ROM Consumed : 132B / 0x84
+RAM Consumed :  12B / 0x0C
 
 Basic and Standard with 3B buffer
-ROM Consumed : 169B / 0xA9
-RAM Consumed :  16B / 0x10
+ROM Consumed : 156B / 0x9C
+RAM Consumed :  13B / 0x0D
 
+Only Standard with 3B buffer
+ROM Consumed : 139B / 0x8B
+RAM Consumed :  13B / 0x0D
 
 All functions with 5B buffer
-ROM Consumed : 223B / 0xDF
-RAM Consumed :  18B / 0x12
+ROM Consumed : 210B / 0xD2
+RAM Consumed :  15B / 0x0F
 
 NOTES:
 	Devices can be configured for handling I2C data in different ways,
@@ -49,10 +51,10 @@ EXTERN WORD i2c_p_data;			// Pointer to current data byte
 EXTERN BYTE i2c_buffer[I2C_BUFF_SIZE];
 EXTERN BIT i2c_slave_ack_bit;
 
-BYTE & i2c_dev_addr				= i2c_buffer[0];			// Element of array for all ops
-BYTE & i2c_reg_addr				= i2c_buffer[I2C_BUFF_END];	// Element of array for random ops
-BYTE & i2c_read_len				= i2c_buffer[I2C_BUFF_LEN];	// Sequential read parameter
-BYTE & i2c_write_len			= i2c_read_len;				// Sequential write parameter
+EXTERN BYTE & i2c_dev_addr;			// Element of array for all ops
+EXTERN BYTE & i2c_reg_addr;	// Element of array for random ops
+EXTERN BYTE & i2c_read_len;	// Sequential read parameter
+EXTERN BYTE & i2c_write_len;	// Sequential write parameter
 
 //===================//
 // PROGRAM INTERFACE //
