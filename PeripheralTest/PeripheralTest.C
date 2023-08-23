@@ -243,7 +243,7 @@ void	FPPA0 (void)
 	//=========================//
 	// 7-SEGMENT FEATURE CHECK //
 	//=========================//
-
+/*
 	Seg_Initialize();
 	Seg_First_Digit();
 	seg_data_byte = SEG_BRIGHTNESS_7 | SEG_7_SEGMENT | SEG_PWR_NORMAL | SEG_SCREEN_ON;
@@ -252,7 +252,7 @@ void	FPPA0 (void)
 	Seg_Write_Char();
 	Seg_Next_Digit();
 	Seg_Release();
-
+*/
 
 	//======================//
 	// EEPROM FEATURE CHECK //

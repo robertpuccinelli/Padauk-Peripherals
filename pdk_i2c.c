@@ -85,10 +85,19 @@ Easy_Delay	macro	val, cmp
 	#ENDIF
 	endm
 
+/*
+#IFZ _SYS (OP:SWAPC IO.n)            // Determine if there is an instruction of swapc io.n
+    swapc  macro   iob             // use macro instead of swapc instruction
+        set0	flag.c;
+        t0sn	iob;
+        set1	flag.c;
+    endm
+#ENDIF
+*/
 
-//====================//
-// HARDWARE INTERFACE //
-//====================//
+//===================//
+// PRIVATE FUNCTIONS //
+//===================//
 
 static void I2C_Start (void)
 {
@@ -97,20 +106,7 @@ static void I2C_Start (void)
 	$ I2C_SCL	Low;
 
 }
-/*
-static void I2C_Tx_ACC (void)
-{
-	BYTE TEMP = 8;
-	while(TEMP--)
-	{
-		sl A;
-		swapc I2C_SDA;
-		Easy_Delay (Delay_Low, 8)
-		$ I2C_SCL High;
-		Easy_Delay (Delay_High, 0)
-		$ I2C_SCL Low;
-	}
-}*/
+
 
 static void I2C_Rx_ACC (void)
 {
@@ -147,19 +143,6 @@ static void I2C_Tx_NAck (void)
 	$ I2C_SCL Low;
 }
 
-/*
-static void I2C_Rx_Ack (void)
-{
-	$ I2C_SDA In;
-	Easy_Delay (Delay_Low, 2);
-	$ I2C_SCL High;
-	i2c_slave_ack_bit = 0;
-	if (I2C_SDA) {i2c_slave_ack_bit = 1;}
-	Easy_Delay (Delay_High, 3);
-	$ I2C_SCL Low;
-	$ I2C_SDA Out;
-}
-*/
 
 static void I2C_Stop (void)
 {
@@ -174,13 +157,8 @@ static void I2C_Stop (void)
 }
 
 
-//===================//
-// PRIVATE FUNCTIONS //
-//===================//
-
 static void I2C_Write_ACC (void)
 {
-//	I2C_Tx_ACC();     // Transmit individual bits
 	// Tx ACC - Send byte in ACC
 	BYTE TEMP = 8;
 	while(TEMP--)
@@ -192,8 +170,6 @@ static void I2C_Write_ACC (void)
 		Easy_Delay (Delay_High, 0)
 		$ I2C_SCL Low;
 	}
-
-	//	I2C_Rx_Ack(); 	  // Listen for slave ack
 
 	// Rx Ack - Listen for slave ack
 	$ I2C_SDA In;
@@ -275,8 +251,6 @@ void I2C_Write_Random (void)
 
 void I2C_Write_Random_Sequential (void)
 {
-//	BYTE & i2c_write_len	= i2c_buffer[I2C_BUFF_LEN];
-
 	I2C_Data_Start();
 	I2C_Start_Reg_Write();
 	while(i2c_buffer[I2C_BUFF_LEN]--) 

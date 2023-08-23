@@ -32,11 +32,11 @@ Copyright (c) 2021 Robert R. Puccinelli
 #define ICE_ILRC_HZ    34700     // ILRC clock of ICE for code validation
 
 #define PERIPH_MATH    	0         // Math utility.  Disable: 0, Enable: 1
-#define PERIPH_I2C     	1         // I2C Master.    Disable: 0, Enable: 1
+#define PERIPH_I2C     	0         // I2C Master.    Disable: 0, Enable: 1
 #define PERIPH_PWM_11B 	0         // 11B PWM.       Disable: 0, Enable: 1
 #define PERIPH_BUTTON  	0         // Buttons.       Disable: 0, Enable: 1
 #define PERIPH_LCD    	0         // LCD.           Disable: 0, Enable: 1
-#define PERIPH_7SEGMENT 1		  // 7-seg display. Disable: 0, Enable: 1
+#define PERIPH_7SEGMENT 0		  // 7-seg display. Disable: 0, Enable: 1
 #define PERIPH_EEPROM  	0         // EEPROM.        Disable: 0, Enable: 1
 #define PERIPH_STEPPER 	0         // Stepper motor. Disable: 0, Enable: 1
 #define PERIPH_TIMER8  	0 
@@ -532,12 +532,14 @@ Copyright (c) 2021 Robert R. Puccinelli
 
 #ifidni PERIPH_7SEGMENT, 1
 
+	#define	SEG_COMM_MODE	I2C
+
     ///////////////////////////
     // DO NOT TOUCH -- START //
     ///////////////////////////
 
 	//TM1650 Driver Addresses, Commands, and Parameters
-    #if USE_I2C_DEVICE_TM1650
+    #ifidni USE_I2C_DEVICE_TM1650, 1
 		#define	SEG_COMM_MODE		I2C 
 	    #define SEG_DRIVER			TM1650
 		#define SEG_CHAR_SET		CHARSET1
@@ -579,13 +581,14 @@ Copyright (c) 2021 Robert R. Puccinelli
 		#define SEG_A	0b01110111
 		#define SEG_C	0b00111001
 		#define SEG_L	0b00111000
+		#define	SEG_P	0b01110011
 		#define SEG_o	0b01011100
 		#define SEG_d	0b01011110
 	#endif
 
 
     #ifidni SEG_COMM_MODE, I2C
-        #ifz PERIPH_I2C
+        #ifidni PERIPH_I2C, 1
             .error Segment Display with I2C Comm Mode REQUIRES PERIPH_I2C to be enabled! 
         #endif
     #endif

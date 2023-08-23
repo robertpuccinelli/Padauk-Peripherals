@@ -31,7 +31,7 @@ Copyright (c) 2021 Robert R. Puccinelli
 // VARIABLES //
 //===========//
 
-WORD eeprom_trx_buffer;
+BYTE eeprom_trx_buffer;
 BYTE eeprom_device_addr = EEPROM_DRIVER;
 BYTE eeprom_flags = 0;
 BIT	 eeprom_module_initialized : eeprom_flags.?;
@@ -119,9 +119,8 @@ void EEPROM_Read (void)
 			#ifidni EEPROM_COMM_MODE, I2C
 
 				// Set read address
-				i2c_device = eeprom_device_addr;
-				I2C_Stream_Write_Start();
-				i2c_buffer = *eeprom_trx_buffer++;
+				i2c_buffer[0] = eeprom_device_addr;
+				i2c_buffer[1] = *eeprom_trx_buffer++;
 				I2C_Stream_Write_Byte();
 				I2C_Stream_Stop();
 
