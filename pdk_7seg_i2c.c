@@ -32,23 +32,14 @@ BYTE & seg_data_byte = i2c_buffer[1];
 
 void Seg_Initialize(void) {I2C_Initialize();}
 
-void Seg_First_Digit(void) {i2c_reg_addr = SEG_DIG1;}
+void Seg_First_Digit(void) {i2c_dev_addr = SEG_DIG1;}
 
-void Seg_Next_Digit(void) {i2c_reg_addr = i2c_reg_addr + SEG_DIG_OFFSET;}
+void Seg_First_Digit_Command(void) {i2c_dev_addr = SEG_SET_PARAM;}
 
-void Seg_Write_Char(void)
-{
-	i2c_dev_addr = SEG_DRIVER;
-	I2C_Write_Random();
-}
+void Seg_Next_Digit(void) {i2c_dev_addr = i2c_dev_addr + SEG_DIG_OFFSET;}
 
-void Seg_Write_Cmd(void)
-{
-	i2c_dev_addr = SEG_DRIVER;
-	i2c_reg_addr = SEG_SET_PARAM;
-	I2C_Write_Random();
-}
+void Seg_Write(void) {I2C_Write_Basic();}
 
-void	Seg_Release		(void) {I2C_Release();}
+void Seg_Release(void) {I2C_Release();}
 
 #ENDIF // SEG_COMM_MODE

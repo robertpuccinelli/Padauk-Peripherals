@@ -9,19 +9,19 @@ be achievable, but it is currently untested.
 
 Basic with 2B buffer
 ROM Consumed : 132B / 0x84
-RAM Consumed :  12B / 0x0C
+RAM Consumed :  13B / 0x0D
 
 Basic and Standard with 3B buffer
 ROM Consumed : 156B / 0x9C
-RAM Consumed :  13B / 0x0D
+RAM Consumed :  14B / 0x0E
 
 Only Standard with 3B buffer
 ROM Consumed : 139B / 0x8B
-RAM Consumed :  13B / 0x0D
+RAM Consumed :  14B / 0x0E
 
 All functions with 5B buffer
 ROM Consumed : 210B / 0xD2
-RAM Consumed :  15B / 0x0F
+RAM Consumed :  16B / 0x10
 
 NOTES:
 	Devices can be configured for handling I2C data in different ways,
@@ -68,7 +68,7 @@ BYTE & i2c_data_n				= i2c_buffer[I2C_DATA_END];	// Element of array for sequent
 
 BYTE i2c_flags = 0;
 BIT  i2c_slave_ack_bit : i2c_flags.?;       // Slave acknowledge bit
-
+STATIC BYTE i2c_temp_data		= 0;
 
 // Delay cycles
 Delay_High  =>  I2C_D_HIGH;
@@ -77,7 +77,6 @@ Delay_Start =>  I2C_D_START;
 Delay_Stop  =>  I2C_D_STOP;
 Delay_Buf   =>  I2C_D_BUF;
 
-
 // Offset target delay
 Easy_Delay	macro	val, cmp
 	#IF	val > cmp
@@ -85,15 +84,31 @@ Easy_Delay	macro	val, cmp
 	#ENDIF
 	endm
 
-/*
-#IFZ _SYS (OP:SWAPC IO.n)            // Determine if there is an instruction of swapc io.n
-    swapc  macro   iob             // use macro instead of swapc instruction
-        set0	flag.c;
-        t0sn	iob;
-        set1	flag.c;
+
+#IFZ _SYS (OP:SWAPC IO.n)	// Determine if there is an instruction of swapc io.n
+    swapc  macro   iob		// use macro instead of swapc instruction
+		t0sn	iob;
+		goto	iob1;
+		t0sn	CF;
+		goto	flagcf1;
+		goto	end_swapc;
+
+iob1:	
+		t0sn	CF;
+		goto	end_swapc;
+		set1	CF;
+		set0	iob;
+		goto	end_swapc;
+
+flagcf1:
+		set1	iob;
+		set0	CF;
+
+end_swapc:
+
     endm
 #ENDIF
-*/
+
 
 //===================//
 // PRIVATE FUNCTIONS //
@@ -101,6 +116,8 @@ Easy_Delay	macro	val, cmp
 
 static void I2C_Start (void)
 {
+	$ I2C_SCL	High;
+	Easy_Delay	(Delay_High, 1);
 	$ I2C_SDA	Low;
 	Easy_Delay	(Delay_Start, 1);
 	$ I2C_SCL	Low;
@@ -108,16 +125,17 @@ static void I2C_Start (void)
 }
 
 
-static void I2C_Rx_ACC (void)
+static void I2C_Rx_Temp_Data (void)
 {
 	BYTE TEMP = 8;
-	$ I2C_SDA In;
+	$ I2C_SDA In, Pull;
 	while(TEMP--)
 	{
 		Easy_Delay (Delay_Low, 4)
 		$ I2C_SCL High;
+		sl i2c_temp_data;
 		swapc I2C_SDA;
-		slc A;
+		slc i2c_temp_data;
 		Easy_Delay (Delay_High, 2)
 		$ I2C_SCL Low;
 	}
@@ -131,6 +149,7 @@ static void I2C_Tx_Ack (void)
 	$ I2C_SCL High;
 	Easy_Delay (Delay_High, 1);
 	$ I2C_SCL Low;
+	Easy_Delay (Delay_Low, 1);
 }
 
 
@@ -141,12 +160,13 @@ static void I2C_Tx_NAck (void)
 	$ I2C_SCL High;
 	Easy_Delay (Delay_High, 1);
 	$ I2C_SCL Low;
+	Easy_Delay (Delay_Low, 1);
 }
 
 
 static void I2C_Stop (void)
 {
-	$ I2C_SDA	Low;
+	$ I2C_SDA	Out, Low;
 	Easy_Delay (Delay_Low, 1);
 
 	$ I2C_SCL	High;
@@ -157,47 +177,54 @@ static void I2C_Stop (void)
 }
 
 
-static void I2C_Write_ACC (void)
+static void I2C_Write_Temp_Data (void)
 {
-	// Tx ACC - Send byte in ACC
+	// Shift data bitwise into carry flag and write to port
 	BYTE TEMP = 8;
 	while(TEMP--)
 	{
-		sl A;
+		sl i2c_temp_data;
 		swapc I2C_SDA;
-		Easy_Delay (Delay_Low, 8)
+		#IFZ _SYS (OP:SWAPC IO.n)	// Remove some delay if swapc op not present
+			Easy_Delay (Delay_Low, 13) 
+		#ELSE
+			Easy_Delay (Delay_Low, 8)
+		#ENDIF
 		$ I2C_SCL High;
-		Easy_Delay (Delay_High, 0)
+		Easy_Delay (Delay_High, 1)
 		$ I2C_SCL Low;
 	}
-
 	// Rx Ack - Listen for slave ack
 	$ I2C_SDA In;
+	#IFZ I2C_EXT_PULLUP
+		.delay 10;		// Takes time to drive input high wo external pullups
+	#ENDIF
 	Easy_Delay (Delay_Low, 2);
 	$ I2C_SCL High;
 	i2c_slave_ack_bit = 0;
-	if (I2C_SDA) {i2c_slave_ack_bit = 1;}
-	Easy_Delay (Delay_High, 3);
+	if (!I2C_SDA) {i2c_slave_ack_bit = 1;}
+	Easy_Delay (Delay_High, 1);
 	$ I2C_SCL Low;
-	$ I2C_SDA Out;
+	Easy_Delay (Delay_Low, 1);
+	$ I2C_SDA Out, High;
 }
 
 
 static void I2C_Start_Reg_Write (void)
 {
 	I2C_Start();
-	A = (i2c_buffer[0] << 1) | I2C_WR_CMD; 		  // Transfer device addr + WR bit to buffer
-	I2C_Write_ACC();
-	A = i2c_buffer[I2C_BUFF_END];
-	I2C_Write_ACC();
+	i2c_temp_data = (i2c_buffer[0] << 1) | I2C_WR_CMD; 		  // Transfer device addr + WR bit to buffer
+	I2C_Write_Temp_Data();
+	i2c_temp_data = i2c_buffer[I2C_BUFF_END];
+	I2C_Write_Temp_Data();
 }
 
 static void I2C_Start_Read (void)
 {
 	I2C_Start();
-	A = (i2c_buffer[0] << 1) | I2C_RD_CMD; 		  // Transfer device addr + WR bit to buffer
-	I2C_Write_ACC();
-	I2C_Rx_ACC();
+	i2c_temp_data = (i2c_buffer[0] << 1) | I2C_RD_CMD; 		  // Transfer device addr + WR bit to buffer
+	I2C_Write_Temp_Data();
+	I2C_Rx_Temp_Data();
 }
 
 
@@ -208,8 +235,8 @@ static void I2C_Start_Read (void)
 void I2C_Initialize (void)
 {
 	$ I2C_SDA	In, Pull;       // Set data input pull high register
-	$ I2C_SDA	Out, High;      // Set data input to output high
 	$ I2C_SCL	Out, High;      // Clock pin set output high
+	$ I2C_SDA	Out, High;      // Set data input to output high
 }
 
 
@@ -219,11 +246,6 @@ void I2C_Release (void)
 	$ I2C_SDA	In, NoPull;     // Set data to low power
 }
 
-void I2C_Data_Start (void)
-{
-	i2c_p_data = &i2c_data_0;
-}
-
 void I2C_Data_Next (void)
 {
 	if (i2c_p_data != &i2c_data_n) {i2c_p_data++;}
@@ -231,53 +253,53 @@ void I2C_Data_Next (void)
 
 void I2C_Write_Basic (void)
 {
-	I2C_Data_Start();
+	i2c_p_data = &i2c_data_0;		//Reset data pointer
 	I2C_Start();
-	A = (i2c_buffer[0] << 1) | I2C_WR_CMD; 		  // Transfer device addr + WR bit to buffer
-	I2C_Write_ACC();
-	A = *i2c_p_data;
-	I2C_Write_ACC();
+	i2c_temp_data = (i2c_buffer[0] << 1) | I2C_WR_CMD; 		  // Transfer device addr + WR bit to buffer
+	I2C_Write_Temp_Data();
+	i2c_temp_data = *i2c_p_data;
+	I2C_Write_Temp_Data();
 	I2C_Stop();
 }
 
 void I2C_Write_Random (void)
 {
-	I2C_Data_Start();
+	i2c_p_data = &i2c_data_0;		//Reset data pointer
 	I2C_Start_Reg_Write();
-	A = *i2c_p_data;
-	I2C_Write_ACC();
+	i2c_temp_data = *i2c_p_data;
+	I2C_Write_Temp_Data();
 	I2C_Stop();
 }
 
 void I2C_Write_Random_Sequential (void)
 {
-	I2C_Data_Start();
+	i2c_p_data = &i2c_data_0;		// Reset data pointer
 	I2C_Start_Reg_Write();
 	while(i2c_buffer[I2C_BUFF_LEN]--) 
 	{
-		A = *i2c_p_data;
-		I2C_Write_ACC();
+		i2c_temp_data = *i2c_p_data;
+		I2C_Write_Temp_Data();
 		I2C_Data_Next();
 	}
 	I2C_Stop();
-	I2C_Data_Start();
+	i2c_p_data = &i2c_data_0;		// Reset data pointer
 }
 
 void I2C_Read_Basic (void)
 {
-	I2C_Data_Start();
+	i2c_p_data = &i2c_data_0;		// Reset data pointer
 	I2C_Start_Read();
-	*i2c_p_data = A;
+	*i2c_p_data = i2c_temp_data;
 	I2C_Tx_NAck();
 	I2C_Stop();
 }
 
 void I2C_Read_Random (void)
 {
-	I2C_Data_Start();
+	i2c_p_data = &i2c_data_0;		// Reset data pointer
 	I2C_Start_Reg_Write();
 	I2C_Start_Read();
-	*i2c_p_data = A;
+	*i2c_p_data = i2c_temp_data;
 	I2C_Tx_NAck();
 	I2C_Stop();
 }
@@ -285,19 +307,19 @@ void I2C_Read_Random (void)
 void I2C_Read_Random_Sequential (void)
 {
 //	BYTE & i2c_read_len	= i2c_buffer[I2C_BUFF_LEN];
-	I2C_Data_Start();
+	i2c_p_data = &i2c_data_0;		// Reset data pointer
 	I2C_Start_Reg_Write();
 	I2C_Start_Read();
 	while(i2c_buffer[I2C_BUFF_LEN]--)
 	{
 		I2C_Tx_Ack();
-		I2C_Rx_ACC();
-		*i2c_p_data = A;
+		I2C_Rx_Temp_Data();
+		*i2c_p_data = i2c_temp_data;
 		I2C_Data_Next();
 	}
 	I2C_Tx_NAck();
 	I2C_Stop();
-	I2C_Data_Start();
+	i2c_p_data = &i2c_data_0;		// Reset data pointer
 }
 
 #ENDIF // PERIPH_I2C

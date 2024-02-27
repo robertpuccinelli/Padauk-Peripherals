@@ -28,7 +28,7 @@ EXTERN BYTE & seg_data_byte;
 
 void Seg_Initialize(void);
 void Seg_First_Digit(void);
+void Seg_First_Digit_Command(void);
 void Seg_Next_Digit(void);
-void Seg_Write_Char(void);
-void Seg_Write_Cmd(void);
+void Seg_Write(void);
 void Seg_Release(void);
